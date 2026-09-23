@@ -1,15 +1,24 @@
 # 🚨 Disaster Response Tweet Classifier & Intelligence Platform
 
+[![Live Demo on Vercel](https://img.shields.io/badge/Vercel-Live%20App-000000.svg?style=for-the-badge&logo=vercel&logoColor=white)](https://disaster-tweet-classification.vercel.app)
 [![Python](https://img.shields.io/badge/Python-3.10%20%7C%203.11%20%7C%203.12-3776AB.svg?style=flat&logo=python&logoColor=white)](https://www.python.org/)
 [![TensorFlow](https://img.shields.io/badge/TensorFlow-2.15%2B-FF6F00.svg?style=flat&logo=tensorflow&logoColor=white)](https://tensorflow.org/)
 [![Flask](https://img.shields.io/badge/Flask-3.0%2B-000000.svg?style=flat&logo=flask&logoColor=white)](https://flask.palletsprojects.com/)
 [![Streamlit](https://img.shields.io/badge/Streamlit-1.28%2B-FF4B4B.svg?style=flat&logo=streamlit&logoColor=white)](https://streamlit.io/)
-[![Vercel Ready](https://img.shields.io/badge/Vercel-Serverless%20Ready-000000.svg?style=flat&logo=vercel&logoColor=white)](https://vercel.com/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
 An end-to-end Natural Language Processing (NLP) system and crisis response intelligence platform engineered to detect urgent humanitarian assistance requests in real time from social media streams, disaster feeds, and ground emergency reports. 
 
-The system categorizes emergency relief needs (**Water**, **Medical Aid**, **Shelter**, **Food**, **Rescue**, **Clothing**) with high confidence, providing both an interactive glassmorphic web interface, a RESTful JSON API, and a real-time analytics monitoring dashboard.
+The system categorizes emergency relief needs (**Water**, **Medical Aid**, **Shelter**, **Food**, **Rescue**, **Clothing**) with high confidence, providing an interactive glassmorphic web interface, a RESTful JSON API, and a real-time analytics monitoring dashboard.
+
+---
+
+## 🌐 Live Web Application
+
+The interactive classification platform is hosted and live on Vercel:
+👉 **[https://disaster-tweet-classification.vercel.app](https://disaster-tweet-classification.vercel.app)**
+
+Try entering disaster scenarios or humanitarian assistance queries directly in the web app to see real-time classification, confidence percentages, and resource requirement tags.
 
 ---
 
@@ -19,7 +28,7 @@ The system categorizes emergency relief needs (**Water**, **Medical Aid**, **She
 - **Lightweight NumPy Serverless Engine (`model_weights.npz` + `word_index.json`)**:
   - Implements an ultra-fast, standalone forward-pass Bidirectional LSTM purely in vector NumPy operations.
   - Zero heavy C++/CUDA TensorFlow runtime required (<30MB total bundle footprint).
-  - Perfect for serverless environments (Vercel, AWS Lambda, Cloudflare Workers) and low-memory cloud tiers.
+  - Powers the live Vercel deployment with fast cold-starts and low memory consumption.
 - **Full Deep Learning Pipeline (`disaster_rnn_model.h5` + `tokenizer.pkl`)**:
   - Trained Bidirectional RNN / LSTM architecture evaluating temporal sequence patterns across tweet text.
   - Automatic fallback between NumPy and Keras backends depending on available environment dependencies.
@@ -176,33 +185,20 @@ Content-Type: application/json
 ```
 
 #### Example cURL:
+
+**Live Production Endpoint (Vercel):**
+```bash
+curl -X POST https://disaster-tweet-classification.vercel.app/api/predict \
+  -H "Content-Type: application/json" \
+  -d '{"tweet": "Severe earthquake damage downtown, multiple victims trapped under rubble needing emergency medical assistance"}'
+```
+
+**Local Endpoint:**
 ```bash
 curl -X POST http://127.0.0.1:5001/api/predict \
   -H "Content-Type: application/json" \
   -d '{"tweet": "Severe earthquake damage downtown, multiple victims trapped under rubble needing emergency medical assistance"}'
 ```
-
----
-
-## ☁️ Deployment Guides
-
-### 1. Deploying to Vercel (1-Click Serverless)
-This repository includes native Vercel serverless configuration ([vercel.json](vercel.json) and [api/index.py](api/index.py)):
-1. Push your repository to GitHub.
-2. Go to **[vercel.com/new](https://vercel.com/new)** and import `saharsh-lab/Disaster-tweet-classification`.
-3. Vercel will automatically detect `vercel.json` and deploy using Python runtime and the ultra-lightweight NumPy inference engine.
-4. Your application and JSON API will be live globally within seconds!
-
-### 2. Deploying Dashboard to Streamlit Cloud
-1. Visit **[share.streamlit.io](https://share.streamlit.io)** and log in with GitHub.
-2. Select `saharsh-lab/Disaster-tweet-classification`.
-3. Set the Main file path to `streamlit_dashboard.py`.
-4. Click **Deploy**.
-
-### 3. Deploying to Render / Railway / Docker
-The repository includes a ready-to-use [Procfile](Procfile):
-- **Build Command**: `pip install -r requirements.txt`
-- **Start Command**: `gunicorn predict_api:app --bind 0.0.0.0:$PORT`
 
 ---
 
