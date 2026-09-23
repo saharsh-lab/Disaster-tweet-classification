@@ -8,7 +8,6 @@ from flask import Flask, request, jsonify, render_template
 CURRENT_DIR = os.path.dirname(os.path.abspath(__file__))
 PARENT_DIR = os.path.dirname(CURRENT_DIR)
 
-# Resolve file paths (check current dir first, then parent dir)
 def resolve_file(filename):
     p1 = os.path.join(CURRENT_DIR, filename)
     if os.path.exists(p1):
@@ -21,42 +20,13 @@ def resolve_file(filename):
 MODEL_NPZ = resolve_file("model_weights.npz")
 WORD_INDEX_JSON = resolve_file("word_index.json")
 
-# Template folder
 templates_dir = os.path.join(CURRENT_DIR, "templates")
 if not os.path.exists(templates_dir):
     templates_dir = os.path.join(PARENT_DIR, "templates")
 
 app = Flask(__name__, template_folder=templates_dir)
 
-# Vercel Path Middleware to preserve URL paths across Vercel rewrites
-class VercelPathMiddleware:
-    def __init__(self, wsgi_app):
-        self.wsgi_app = wsgi_app
-
-    def __call__(self, environ, start_response):
-        path = environ.get('PATH_INFO', '')
-        if path in ('/api/index', '/api/index.py', '/api', '/api/'):
-            orig = (
-                environ.get('HTTP_X_MATCHED_PATH') or 
-                environ.get('HTTP_X_FORWARDED_URI') or 
-                environ.get('REQUEST_URI') or 
-                ''
-            )
-            if orig:
-                clean_orig = orig.split('?')[0]
-                if clean_orig and clean_orig not in ('/api/index', '/api/index.py', '/api', '/api/'):
-                    environ['PATH_INFO'] = clean_orig
-                else:
-                    environ['PATH_INFO'] = '/'
-            else:
-                environ['PATH_INFO'] = '/'
-        elif path.startswith('/api/index/'):
-            environ['PATH_INFO'] = path[len('/api/index'):] or '/'
-        return self.wsgi_app(environ, start_response)
-
-app.wsgi_app = VercelPathMiddleware(app.wsgi_app)
-
-# Load word index (pure JSON, zero Keras/TensorFlow requirement)
+# Load word index
 word_index = {}
 if os.path.exists(WORD_INDEX_JSON):
     with open(WORD_INDEX_JSON, "r") as f:
@@ -64,7 +34,7 @@ if os.path.exists(WORD_INDEX_JSON):
 oov_id = word_index.get('<OOV>', 1)
 MAX_LEN = 30
 
-# Load pure NumPy model weights (instant cold start, < 250MB limit)
+# Load pure NumPy model weights
 weights = np.load(MODEL_NPZ)
 w_emb = weights['w_emb']
 w_f_i = weights['w_f_i']
@@ -143,25 +113,7 @@ def extract_resource(text):
     else:
         return "unspecified resource"
 
-@app.route('/')
-@app.route('/api')
-@app.route('/api/index')
-def home():
-    return render_template('index.html', prediction=None, tweet='', is_request=None, resource=None, confidence=None)
-
-@app.route('/predict', methods=['POST'])
-@app.route('/api/predict_form', methods=['POST'])
-@app.route('/api/index/predict', methods=['POST'])
-def predict():
-    tweet = request.form.get('tweet', '')
-    if not tweet.strip():
-        return render_template('index.html', 
-                               prediction="Please enter or select a tweet to classify.",
-                               tweet='',
-                               is_request=None,
-                               resource=None,
-                               confidence=None)
-    
+def process_classification(tweet):
     cleaned = clean_text(tweet)
     prob = predict_probability(cleaned)
     is_request = prob >= 0.5
@@ -174,14 +126,62 @@ def predict():
         resource = "None"
         result = f"NOT A REQUEST ({prob:.2f})"
         
-    return render_template('index.html', 
-                           prediction=result, 
-                           tweet=tweet,
-                           is_request=is_request,
-                           resource=resource,
-                           confidence=confidence_pct,
-                           prob=round(prob, 3))
+    return {
+        'prediction': result,
+        'tweet': tweet,
+        'cleaned': cleaned,
+        'is_request': is_request,
+        'resource': resource,
+        'confidence': confidence_pct,
+        'prob': round(prob, 3)
+    }
 
+# Unified handler for all web interface routes
+@app.route('/', methods=['GET', 'POST'])
+@app.route('/predict', methods=['GET', 'POST'])
+@app.route('/api', methods=['GET', 'POST'])
+@app.route('/api/index', methods=['GET', 'POST'])
+@app.route('/api/index.py', methods=['GET', 'POST'])
+def index():
+    # If JSON API request
+    if request.is_json or request.path.endswith('/api/predict'):
+        data = request.get_json(force=True, silent=True) or {}
+        tweet = data.get('tweet', '')
+        if not tweet.strip():
+            return jsonify({'error': 'No tweet text provided'}), 400
+        res = process_classification(tweet)
+        return jsonify({
+            'tweet': res['tweet'],
+            'cleaned': res['cleaned'],
+            'is_request': res['is_request'],
+            'probability': res['prob'],
+            'confidence_percent': res['confidence'],
+            'resource': res['resource'] if res['is_request'] else None
+        })
+
+    # If Web Form POST request
+    if request.method == 'POST':
+        tweet = request.form.get('tweet', '')
+        if not tweet.strip():
+            return render_template('index.html', 
+                                   prediction="Please enter or select a tweet to classify.",
+                                   tweet='',
+                                   is_request=None,
+                                   resource=None,
+                                   confidence=None)
+        res = process_classification(tweet)
+        return render_template('index.html', 
+                               prediction=res['prediction'], 
+                               tweet=res['tweet'],
+                               is_request=res['is_request'],
+                               resource=res['resource'],
+                               confidence=res['confidence'],
+                               prob=res['prob'])
+
+    # Default GET request
+    return render_template('index.html', prediction=None, tweet='', is_request=None, resource=None, confidence=None)
+
+# Explicit JSON API Route
 @app.route('/api/predict', methods=['POST'])
 @app.route('/api/index/api/predict', methods=['POST'])
 def api_predict():
@@ -189,17 +189,14 @@ def api_predict():
     tweet = data.get('tweet', '')
     if not tweet.strip():
         return jsonify({'error': 'No tweet text provided'}), 400
-    cleaned = clean_text(tweet)
-    prob = predict_probability(cleaned)
-    is_request = prob >= 0.5
-    resource = extract_resource(tweet) if is_request else None
+    res = process_classification(tweet)
     return jsonify({
-        'tweet': tweet,
-        'cleaned': cleaned,
-        'is_request': is_request,
-        'probability': round(prob, 4),
-        'confidence_percent': round(prob * 100, 1),
-        'resource': resource
+        'tweet': res['tweet'],
+        'cleaned': res['cleaned'],
+        'is_request': res['is_request'],
+        'probability': res['prob'],
+        'confidence_percent': res['confidence'],
+        'resource': res['resource'] if res['is_request'] else None
     })
 
 # Export WSGI application for Vercel
