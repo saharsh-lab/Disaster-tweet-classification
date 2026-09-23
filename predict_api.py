@@ -1,24 +1,89 @@
-from flask import Flask, request, jsonify, render_template
-import re
-import numpy as np
-import pickle
-from tensorflow.keras.models import load_model
-from tensorflow.keras.preprocessing.sequence import pad_sequences
+import os
 import sys
+import re
+import pickle
+import numpy as np
+from flask import Flask, request, jsonify, render_template
 
-# Load model and tokenizer
-model = load_model("disaster_rnn_model.h5")
-tokenizer = pickle.load(open("tokenizer.pkl", "rb"))
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+MODEL_NPZ = os.path.join(BASE_DIR, "model_weights.npz")
+MODEL_H5 = os.path.join(BASE_DIR, "disaster_rnn_model.h5")
+TOKENIZER_PKL = os.path.join(BASE_DIR, "tokenizer.pkl")
+TEMPLATES_DIR = os.path.join(BASE_DIR, "templates")
 MAX_LEN = 30
 
-app = Flask(__name__)
+app = Flask(__name__, template_folder=TEMPLATES_DIR)
+
+# Load tokenizer
+with open(TOKENIZER_PKL, "rb") as f:
+    tokenizer = pickle.load(f)
+word_index = getattr(tokenizer, 'word_index', {})
+oov_id = word_index.get('<OOV>', 1)
+
+# Check for ultra-fast pure NumPy weights (Vercel Serverless compatible, < 250MB limit)
+if os.path.exists(MODEL_NPZ):
+    weights = np.load(MODEL_NPZ)
+    w_emb = weights['w_emb']
+    w_f_i = weights['w_f_i']
+    w_f_h = weights['w_f_h']
+    b_f = weights['b_f']
+    w_b_i = weights['w_b_i']
+    w_b_h = weights['w_b_h']
+    b_b = weights['b_b']
+    w_d1 = weights['w_d1']
+    b_d1 = weights['b_d1']
+    w_d2 = weights['w_d2']
+    b_d2 = weights['b_d2']
+
+    def _sigmoid(x):
+        return 1.0 / (1.0 + np.exp(-np.clip(x, -30, 30)))
+
+    def _run_lstm(x_seq, w_i, w_h, b):
+        units = w_h.shape[0]
+        h = np.zeros(units, dtype=np.float32)
+        c = np.zeros(units, dtype=np.float32)
+        for x_t in x_seq:
+            gates = np.dot(x_t, w_i) + np.dot(h, w_h) + b
+            i_gate = _sigmoid(gates[:units])
+            f_gate = _sigmoid(gates[units:2*units])
+            c_cand = np.tanh(gates[2*units:3*units])
+            o_gate = _sigmoid(gates[3*units:4*units])
+            c = f_gate * c + i_gate * c_cand
+            h = o_gate * np.tanh(c)
+        return h
+
+    def predict_probability(cleaned_text):
+        seq = []
+        for w in cleaned_text.split():
+            idx = word_index.get(w, oov_id)
+            if idx >= 5000:
+                idx = oov_id
+            seq.append(idx)
+        pad = np.zeros(MAX_LEN, dtype=np.int32)
+        pad[:min(len(seq), MAX_LEN)] = seq[:min(len(seq), MAX_LEN)]
+        
+        emb = w_emb[pad]
+        h_f = _run_lstm(emb, w_f_i, w_f_h, b_f)
+        h_b = _run_lstm(emb[::-1], w_b_i, w_b_h, b_b)
+        h_bidi = np.concatenate([h_f, h_b])
+        d1 = np.maximum(0, np.dot(h_bidi, w_d1) + b_d1)
+        prob = float(_sigmoid(np.dot(d1, w_d2) + b_d2)[0])
+        return prob
+else:
+    from tensorflow.keras.models import load_model
+    from tensorflow.keras.preprocessing.sequence import pad_sequences
+    model = load_model(MODEL_H5)
+
+    def predict_probability(cleaned_text):
+        seq = tokenizer.texts_to_sequences([cleaned_text])
+        padded = pad_sequences(seq, maxlen=MAX_LEN, padding='post')
+        return float(model.predict(padded)[0][0])
 
 STOPWORDS = {
     'a', 'an', 'the', 'and', 'or', 'but', 'if', 'while', 'with', 'to', 'from', 'in', 'on', 'for', 'of', 'at',
     'is', 'are', 'was', 'were', 'be', 'been', 'being', 'have', 'has', 'had', 'do', 'does', 'did',
     'i', 'you', 'he', 'she', 'it', 'we', 'they', 'me', 'him', 'her', 'us', 'them'
 }
-
 
 def clean_text(text):
     text = text.lower()
@@ -60,9 +125,7 @@ def predict():
                                confidence=None)
     
     cleaned = clean_text(tweet)
-    seq = tokenizer.texts_to_sequences([cleaned])
-    padded = pad_sequences(seq, maxlen=MAX_LEN, padding='post')
-    prob = float(model.predict(padded)[0][0])
+    prob = predict_probability(cleaned)
     is_request = prob >= 0.5
     confidence_pct = round(prob * 100, 1)
 
@@ -88,9 +151,7 @@ def api_predict():
     if not tweet.strip():
         return jsonify({'error': 'No tweet text provided'}), 400
     cleaned = clean_text(tweet)
-    seq = tokenizer.texts_to_sequences([cleaned])
-    padded = pad_sequences(seq, maxlen=MAX_LEN, padding='post')
-    prob = float(model.predict(padded)[0][0])
+    prob = predict_probability(cleaned)
     is_request = prob >= 0.5
     resource = extract_resource(tweet) if is_request else None
     return jsonify({
@@ -110,12 +171,10 @@ if __name__ == "__main__":
         except Exception:
             pass
     else:
-        # Check if default port 5000 is occupied (e.g. macOS AirPlay Receiver)
         import socket
         try:
             with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
                 if s.connect_ex(('127.0.0.1', 5000)) == 0:
-                    print("Port 5000 is already in use (e.g. macOS AirPlay). Using port 5001 instead.")
                     port = 5001
         except Exception:
             pass

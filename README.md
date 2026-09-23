@@ -134,9 +134,16 @@ python main_automation.py --mode continuous --interval 15
 
 ## ☁️ Deployment Guides
 
+### Deploying the Web App to Vercel (Recommended - 1-Click Serverless)
+1. Go to **[vercel.com/new](https://vercel.com/new)** and log in with your GitHub account.
+2. Under "Import Git Repository", select **`saharsh-lab/Disaster-tweet-classification`**.
+3. Vercel automatically detects `vercel.json` and the serverless endpoint [`api/index.py`](api/index.py).
+4. Click **Deploy**!
+5. Within 60 seconds, your Web App and API will be live on a fast, global serverless URL (e.g. `https://disaster-tweet-classification.vercel.app`).
+
 ### Deploying the Streamlit Dashboard to Streamlit Community Cloud
 1. Push this repository to GitHub.
-2. Go to [share.streamlit.io](https://share.streamlit.io) and log in with GitHub.
+2. Go to **[share.streamlit.io](https://share.streamlit.io)** and log in with GitHub.
 3. Select your repository, set the branch to `main`, and main file path to `streamlit_dashboard.py`.
 4. Click **Deploy**.
 
