@@ -1,0 +1,25 @@
+# Python Virtual Environment
+venv/
+env/
+.env
+
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+
+# Jupyter Notebook checkpoints
+.ipynb_checkpoints/
+
+# macOS system files
+.DS_Store
+
+# IDE and Editors
+.vscode/
+.idea/
+
+# Automation temporary logs and reports
+automation_log.txt
+automation_report_*.html
+*.log

@@ -1,0 +1,656 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Disaster Response Tweet Classifier | AI Emergency NLP</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg-dark: #0a0f1d;
+      --card-bg: rgba(17, 24, 39, 0.82);
+      --card-border: rgba(255, 255, 255, 0.08);
+      --primary: #38bdf8;
+      --primary-gradient: linear-gradient(135deg, #0284c7 0%, #6366f1 100%);
+      --accent: #818cf8;
+      --text-main: #f8fafc;
+      --text-muted: #94a3b8;
+      --danger: #f43f5e;
+      --danger-bg: rgba(244, 63, 94, 0.12);
+      --danger-border: rgba(244, 63, 94, 0.35);
+      --success: #10b981;
+      --success-bg: rgba(16, 185, 129, 0.12);
+      --success-border: rgba(16, 185, 129, 0.35);
+      --warning: #f59e0b;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      background-color: var(--bg-dark);
+      background-image: 
+        radial-gradient(circle at 15% 15%, rgba(56, 189, 248, 0.08) 0%, transparent 40%),
+        radial-gradient(circle at 85% 85%, rgba(99, 102, 241, 0.08) 0%, transparent 40%),
+        radial-gradient(circle at 50% 50%, rgba(15, 23, 42, 0.5) 0%, transparent 100%);
+      color: var(--text-main);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 40px 20px;
+    }
+
+    .top-nav {
+      width: 100%;
+      max-width: 860px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 28px;
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-weight: 700;
+      font-size: 1.1rem;
+      letter-spacing: -0.02em;
+    }
+
+    .brand-icon {
+      width: 32px;
+      height: 32px;
+      background: var(--primary-gradient);
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.1rem;
+      box-shadow: 0 4px 12px rgba(56, 189, 248, 0.3);
+    }
+
+    .nav-actions {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .status-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 6px 12px;
+      background: rgba(16, 185, 129, 0.1);
+      border: 1px solid rgba(16, 185, 129, 0.25);
+      border-radius: 20px;
+      font-size: 0.8rem;
+      color: #34d399;
+      font-weight: 500;
+    }
+
+    .status-dot {
+      width: 7px;
+      height: 7px;
+      background: #10b981;
+      border-radius: 50%;
+      box-shadow: 0 0 8px #10b981;
+      animation: pulse 2s infinite;
+    }
+
+    @keyframes pulse {
+      0% { opacity: 1; }
+      50% { opacity: 0.4; }
+      100% { opacity: 1; }
+    }
+
+    .dashboard-link {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 6px 14px;
+      background: rgba(99, 102, 241, 0.15);
+      border: 1px solid rgba(99, 102, 241, 0.35);
+      border-radius: 8px;
+      color: #a5b4fc;
+      text-decoration: none;
+      font-size: 0.85rem;
+      font-weight: 500;
+      transition: all 0.2s ease;
+    }
+
+    .dashboard-link:hover {
+      background: rgba(99, 102, 241, 0.25);
+      color: #ffffff;
+      transform: translateY(-1px);
+    }
+
+    .main-card {
+      width: 100%;
+      max-width: 860px;
+      background: var(--card-bg);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      border: 1px solid var(--card-border);
+      border-radius: 20px;
+      padding: 36px;
+      box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+    }
+
+    .header-section {
+      text-align: center;
+      margin-bottom: 28px;
+    }
+
+    .tagline {
+      display: inline-block;
+      font-size: 0.75rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      color: var(--primary);
+      margin-bottom: 8px;
+      background: rgba(56, 189, 248, 0.1);
+      padding: 4px 10px;
+      border-radius: 6px;
+      border: 1px solid rgba(56, 189, 248, 0.2);
+    }
+
+    h1 {
+      font-size: 2.2rem;
+      font-weight: 800;
+      letter-spacing: -0.03em;
+      margin-bottom: 10px;
+      background: linear-gradient(135deg, #ffffff 40%, #94a3b8 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    .subtitle {
+      color: var(--text-muted);
+      font-size: 0.95rem;
+      max-width: 600px;
+      margin: 0 auto;
+      line-height: 1.5;
+    }
+
+    /* Preset Buttons */
+    .presets-label {
+      font-size: 0.8rem;
+      font-weight: 600;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      margin-bottom: 10px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .preset-container {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-bottom: 20px;
+    }
+
+    .preset-pill {
+      background: rgba(255, 255, 255, 0.04);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      border-radius: 20px;
+      color: #cbd5e1;
+      font-size: 0.82rem;
+      padding: 6px 14px;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      font-family: inherit;
+    }
+
+    .preset-pill:hover {
+      background: rgba(56, 189, 248, 0.12);
+      border-color: rgba(56, 189, 248, 0.3);
+      color: var(--primary);
+      transform: translateY(-1px);
+    }
+
+    /* Form Styles */
+    form {
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+
+    .textarea-wrapper {
+      position: relative;
+    }
+
+    textarea {
+      width: 100%;
+      min-height: 120px;
+      padding: 16px;
+      background: #0f172a;
+      border: 1px solid #334155;
+      border-radius: 12px;
+      color: #f8fafc;
+      font-family: inherit;
+      font-size: 0.98rem;
+      line-height: 1.6;
+      resize: vertical;
+      outline: none;
+      transition: all 0.2s ease;
+      box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.3);
+    }
+
+    textarea:focus {
+      border-color: #38bdf8;
+      box-shadow: 0 0 0 3px rgba(56, 189, 248, 0.2), inset 0 2px 4px rgba(0, 0, 0, 0.2);
+    }
+
+    .form-bottom {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-top: 4px;
+    }
+
+    .char-hint {
+      font-size: 0.8rem;
+      color: #64748b;
+    }
+
+    .btn-group {
+      display: flex;
+      gap: 10px;
+    }
+
+    .btn-clear {
+      background: transparent;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      color: #94a3b8;
+      border-radius: 10px;
+      padding: 12px 18px;
+      font-size: 0.9rem;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .btn-clear:hover {
+      background: rgba(255, 255, 255, 0.05);
+      color: #e2e8f0;
+    }
+
+    .btn-submit {
+      background: var(--primary-gradient);
+      border: none;
+      color: #ffffff;
+      border-radius: 10px;
+      padding: 12px 28px;
+      font-size: 0.95rem;
+      font-weight: 600;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      box-shadow: 0 4px 16px rgba(56, 189, 248, 0.3);
+      transition: all 0.2s ease;
+    }
+
+    .btn-submit:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 6px 20px rgba(56, 189, 248, 0.45);
+      filter: brightness(1.05);
+    }
+
+    .btn-submit:active {
+      transform: translateY(0);
+    }
+
+    /* Result Card */
+    .result-container {
+      margin-top: 32px;
+      padding-top: 28px;
+      border-top: 1px solid rgba(255, 255, 255, 0.08);
+      animation: fadeIn 0.3s ease;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(8px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .result-card {
+      border-radius: 14px;
+      padding: 24px;
+      border: 1px solid;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .result-card.is-emergency {
+      background: var(--danger-bg);
+      border-color: var(--danger-border);
+    }
+
+    .result-card.is-safe {
+      background: var(--success-bg);
+      border-color: var(--success-border);
+    }
+
+    .result-card.is-info {
+      background: rgba(148, 163, 184, 0.08);
+      border-color: rgba(148, 163, 184, 0.2);
+    }
+
+    .result-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 16px;
+      flex-wrap: wrap;
+      gap: 12px;
+    }
+
+    .result-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      font-weight: 700;
+      font-size: 1.05rem;
+      letter-spacing: -0.01em;
+    }
+
+    .badge-emergency {
+      color: #fb7185;
+    }
+
+    .badge-safe {
+      color: #34d399;
+    }
+
+    .badge-info {
+      color: #cbd5e1;
+    }
+
+    .resource-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      background: rgba(255, 255, 255, 0.1);
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      border-radius: 20px;
+      padding: 4px 14px;
+      font-size: 0.85rem;
+      font-weight: 600;
+      color: #ffffff;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+
+    .resource-water { background: rgba(56, 189, 248, 0.2); border-color: rgba(56, 189, 248, 0.5); color: #7dd3fc; }
+    .resource-food { background: rgba(245, 158, 11, 0.2); border-color: rgba(245, 158, 11, 0.5); color: #fcd34d; }
+    .resource-medical { background: rgba(239, 68, 68, 0.2); border-color: rgba(239, 68, 68, 0.5); color: #fca5a5; }
+    .resource-shelter { background: rgba(168, 85, 247, 0.2); border-color: rgba(168, 85, 247, 0.5); color: #d8b4fe; }
+    .resource-rescue { background: rgba(249, 115, 22, 0.2); border-color: rgba(249, 115, 22, 0.5); color: #fdba74; }
+    .resource-clothing { background: rgba(20, 184, 166, 0.2); border-color: rgba(20, 184, 166, 0.5); color: #5eead4; }
+
+    .result-text {
+      font-size: 1.15rem;
+      font-weight: 600;
+      margin-bottom: 20px;
+      line-height: 1.4;
+    }
+
+    /* Metric Visualizer */
+    .metric-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 14px;
+      margin-top: 16px;
+    }
+
+    .metric-box {
+      background: rgba(0, 0, 0, 0.25);
+      border-radius: 10px;
+      padding: 12px 16px;
+      border: 1px solid rgba(255, 255, 255, 0.05);
+    }
+
+    .metric-label {
+      font-size: 0.75rem;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      margin-bottom: 6px;
+    }
+
+    .metric-value {
+      font-size: 1.2rem;
+      font-weight: 700;
+      color: #ffffff;
+      display: flex;
+      align-items: baseline;
+      gap: 4px;
+    }
+
+    .progress-bar-container {
+      width: 100%;
+      height: 6px;
+      background: rgba(255, 255, 255, 0.1);
+      border-radius: 4px;
+      margin-top: 8px;
+      overflow: hidden;
+    }
+
+    .progress-bar {
+      height: 100%;
+      border-radius: 4px;
+      transition: width 0.6s ease;
+    }
+
+    .bar-danger { background: linear-gradient(90deg, #f59e0b, #ef4444); }
+    .bar-safe { background: linear-gradient(90deg, #10b981, #06b6d4); }
+
+    /* Footer Details */
+    .system-footer {
+      width: 100%;
+      max-width: 860px;
+      margin-top: 30px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 16px;
+      font-size: 0.85rem;
+      color: #64748b;
+      padding: 0 10px;
+    }
+
+    .tech-stack {
+      display: flex;
+      gap: 14px;
+    }
+
+    .tech-pill {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.75rem;
+      color: #94a3b8;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Top Navigation Bar -->
+  <nav class="top-nav">
+    <div class="brand">
+      <div class="brand-icon">🚨</div>
+      <span>DisasterNet AI</span>
+    </div>
+    <div class="nav-actions">
+      <div class="status-badge">
+        <span class="status-dot"></span>
+        <span>RNN Model Online</span>
+      </div>
+      <a href="http://127.0.0.1:8501" target="_blank" class="dashboard-link">
+        📊 Analytics Dashboard &rarr;
+      </a>
+    </div>
+  </nav>
+
+  <!-- Main Classifier Container -->
+  <main class="main-card">
+    <div class="header-section">
+      <div class="tagline">NLP Natural Disaster Request Intelligence</div>
+      <h1>Disaster Tweet Classifier</h1>
+      <p class="subtitle">
+        Automatically detect urgent disaster relief requests from social media messages and identify essential resource requirements in real time.
+      </p>
+    </div>
+
+    <!-- Quick Test Preset Pills -->
+    <div>
+      <div class="presets-label">⚡ Quick Presets (Click to test):</div>
+      <div class="preset-container">
+        <button type="button" class="preset-pill" onclick="loadPreset('Urgent! Heavy flash flooding in Sector 7, families trapped on roofs, need immediate rescue boats and clean drinking water!')">
+          🌊 Flood & Drinking Water
+        </button>
+        <button type="button" class="preset-pill" onclick="loadPreset('Emergency: Multi-story building collapsed after the earthquake, severe injuries, need doctors and emergency medical supplies urgently.')">
+          🏥 Earthquake & Medical Aid
+        </button>
+        <button type="button" class="preset-pill" onclick="loadPreset('Cyclone destroyed dozens of homes in coastal village, families displaced with children, urgent food and shelter accommodation required.')">
+          🏕️ Cyclone & Shelter
+        </button>
+        <button type="button" class="preset-pill" onclick="loadPreset('Drought crisis hitting the northern district hard, starving cattle and children, urgent food supplies needed!')">
+          🍞 Food Crisis
+        </button>
+        <button type="button" class="preset-pill" onclick="loadPreset('Enjoying the sunshine and having an iced coffee with friends downtown, hope everyone has a wonderful weekend!')">
+          ☕ Casual (Non-Disaster)
+        </button>
+      </div>
+    </div>
+
+    <!-- Classification Form -->
+    <form method="POST" action="/predict" id="classifyForm">
+      <div class="textarea-wrapper">
+        <textarea 
+          id="tweetInput"
+          name="tweet" 
+          placeholder="Paste or type a tweet/message here to classify (e.g. 'Flash floods rising quickly, need rescue teams and drinking water urgently')..."
+          required
+        >{{ tweet }}</textarea>
+      </div>
+
+      <div class="form-bottom">
+        <div class="char-hint">
+          Model: Bidirectional RNN / LSTM • Max Tokens: 30
+        </div>
+        <div class="btn-group">
+          <button type="button" class="btn-clear" onclick="clearText()">Clear</button>
+          <button type="submit" class="btn-submit">
+            <span>Classify Message</span>
+            <span>⚡</span>
+          </button>
+        </div>
+      </div>
+    </form>
+
+    <!-- Prediction Results Section -->
+    {% if prediction %}
+    <div class="result-container">
+      <div class="result-card {% if is_request %}is-emergency{% elif is_request == False %}is-safe{% else %}is-info{% endif %}">
+        <div class="result-header">
+          <div class="result-badge {% if is_request %}badge-emergency{% elif is_request == False %}badge-safe{% else %}badge-info{% endif %}">
+            {% if is_request %}
+              🚨 <span>DISASTER EMERGENCY DETECTED</span>
+            {% elif is_request == False %}
+              ✅ <span>INFORMATIONAL / GENERAL TWEET</span>
+            {% else %}
+              ℹ️ <span>SYSTEM MESSAGE</span>
+            {% endif %}
+          </div>
+
+          {% if resource and resource != 'None' and resource != 'unspecified resource' %}
+            <div class="resource-badge 
+              {% if 'water' in resource %}resource-water
+              {% elif 'medical' in resource %}resource-medical
+              {% elif 'shelter' in resource %}resource-shelter
+              {% elif 'food' in resource %}resource-food
+              {% elif 'rescue' in resource %}resource-rescue
+              {% elif 'cloth' in resource %}resource-clothing
+              {% endif %}
+            ">
+              Resource: {{ resource }}
+            </div>
+          {% endif %}
+        </div>
+
+        <div class="result-text">
+          {{ prediction }}
+        </div>
+
+        {% if prob is not none %}
+        <div class="metric-grid">
+          <div class="metric-box">
+            <div class="metric-label">Model Confidence</div>
+            <div class="metric-value">
+              {{ confidence }}%
+            </div>
+            <div class="progress-bar-container">
+              <div class="progress-bar {% if is_request %}bar-danger{% else %}bar-safe{% endif %}" style="width: {{ confidence }}%;"></div>
+            </div>
+          </div>
+
+          <div class="metric-box">
+            <div class="metric-label">Raw Probability</div>
+            <div class="metric-value" style="font-family: 'JetBrains Mono', monospace; font-size: 1.1rem;">
+              {{ prob }}
+            </div>
+          </div>
+
+          <div class="metric-box">
+            <div class="metric-label">Extracted Resource Need</div>
+            <div class="metric-value" style="font-size: 1.05rem; text-transform: capitalize;">
+              {{ resource if resource else 'None' }}
+            </div>
+          </div>
+        </div>
+        {% endif %}
+      </div>
+    </div>
+    {% endif %}
+  </main>
+
+  <!-- Footer Info -->
+  <footer class="system-footer">
+    <div>
+      Disaster Response Automation System • Powered by TensorFlow & Keras
+    </div>
+    <div class="tech-stack">
+      <span class="tech-pill">Flask :5001</span>
+      <span class="tech-pill">Streamlit :8501</span>
+      <span class="tech-pill">RNN/LSTM</span>
+    </div>
+  </footer>
+
+  <script>
+    function loadPreset(text) {
+      const textarea = document.getElementById('tweetInput');
+      textarea.value = text;
+      textarea.focus();
+    }
+
+    function clearText() {
+      const textarea = document.getElementById('tweetInput');
+      textarea.value = '';
+      textarea.focus();
+    }
+  </script>
+</body>
+</html>
