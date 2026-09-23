@@ -28,6 +28,34 @@ if not os.path.exists(templates_dir):
 
 app = Flask(__name__, template_folder=templates_dir)
 
+# Vercel Path Middleware to preserve URL paths across Vercel rewrites
+class VercelPathMiddleware:
+    def __init__(self, wsgi_app):
+        self.wsgi_app = wsgi_app
+
+    def __call__(self, environ, start_response):
+        path = environ.get('PATH_INFO', '')
+        if path in ('/api/index', '/api/index.py', '/api', '/api/'):
+            orig = (
+                environ.get('HTTP_X_MATCHED_PATH') or 
+                environ.get('HTTP_X_FORWARDED_URI') or 
+                environ.get('REQUEST_URI') or 
+                ''
+            )
+            if orig:
+                clean_orig = orig.split('?')[0]
+                if clean_orig and clean_orig not in ('/api/index', '/api/index.py', '/api', '/api/'):
+                    environ['PATH_INFO'] = clean_orig
+                else:
+                    environ['PATH_INFO'] = '/'
+            else:
+                environ['PATH_INFO'] = '/'
+        elif path.startswith('/api/index/'):
+            environ['PATH_INFO'] = path[len('/api/index'):] or '/'
+        return self.wsgi_app(environ, start_response)
+
+app.wsgi_app = VercelPathMiddleware(app.wsgi_app)
+
 # Load word index (pure JSON, zero Keras/TensorFlow requirement)
 word_index = {}
 if os.path.exists(WORD_INDEX_JSON):
@@ -116,10 +144,14 @@ def extract_resource(text):
         return "unspecified resource"
 
 @app.route('/')
+@app.route('/api')
+@app.route('/api/index')
 def home():
     return render_template('index.html', prediction=None, tweet='', is_request=None, resource=None, confidence=None)
 
 @app.route('/predict', methods=['POST'])
+@app.route('/api/predict_form', methods=['POST'])
+@app.route('/api/index/predict', methods=['POST'])
 def predict():
     tweet = request.form.get('tweet', '')
     if not tweet.strip():
@@ -151,6 +183,7 @@ def predict():
                            prob=round(prob, 3))
 
 @app.route('/api/predict', methods=['POST'])
+@app.route('/api/index/api/predict', methods=['POST'])
 def api_predict():
     data = request.get_json(force=True, silent=True) or {}
     tweet = data.get('tweet', '')
