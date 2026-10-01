@@ -126,14 +126,33 @@ def process_classification(tweet):
         resource = "None"
         result = f"NOT A REQUEST ({prob:.2f})"
         
+    tokens = cleaned.split()
+    emergency_signals = [t for t in tokens if t in ['flood', 'earthquake', 'fire', 'trapped', 'water', 'food', 'shelter', 'doctor', 'medical', 'hospital', 'rescue', 'evacuation', 'urgent', 'emergency', 'help', 'collapsed', 'damage', 'injured', 'cyclone', 'drought', 'storm']]
     return {
         'prediction': result,
         'tweet': tweet,
         'cleaned': cleaned,
+        'tokens': tokens,
+        'emergency_signals': emergency_signals,
         'is_request': is_request,
         'resource': resource,
         'confidence': confidence_pct,
-        'prob': round(prob, 3)
+        'prob': round(prob, 3),
+        'status': 'High confidence' if prob > 0.8 else ('Moderate' if prob >= 0.5 else 'Non-Disaster')
+    }
+
+try:
+    import data_service
+except ImportError:
+    sys.path.insert(0, PARENT_DIR)
+    import data_service
+
+def _get_context_data():
+    return {
+        'initial_stats': data_service.get_stats(),
+        'initial_tweets': data_service.query_tweets(page=1, page_size=25),
+        'initial_model_info': data_service.get_model_performance(),
+        'initial_dataset': data_service.query_dataset(page=1, page_size=25)
     }
 
 # Unified handler for all web interface routes
@@ -143,6 +162,7 @@ def process_classification(tweet):
 @app.route('/api/index', methods=['GET', 'POST'])
 @app.route('/api/index.py', methods=['GET', 'POST'])
 def index():
+    ctx = _get_context_data()
     # If JSON API request
     if request.is_json or request.path.endswith('/api/predict'):
         data = request.get_json(force=True, silent=True) or {}
@@ -153,10 +173,13 @@ def index():
         return jsonify({
             'tweet': res['tweet'],
             'cleaned': res['cleaned'],
+            'tokens': res['tokens'],
+            'emergency_signals': res['emergency_signals'],
             'is_request': res['is_request'],
             'probability': res['prob'],
             'confidence_percent': res['confidence'],
-            'resource': res['resource'] if res['is_request'] else None
+            'resource': res['resource'],
+            'status': res['status']
         })
 
     # If Web Form POST request
@@ -166,20 +189,33 @@ def index():
             return render_template('index.html', 
                                    prediction="Please enter or select a tweet to classify.",
                                    tweet='',
+                                   cleaned=None,
                                    is_request=None,
                                    resource=None,
-                                   confidence=None)
+                                   confidence=None,
+                                   prob=None,
+                                   **ctx)
         res = process_classification(tweet)
         return render_template('index.html', 
                                prediction=res['prediction'], 
                                tweet=res['tweet'],
+                               cleaned=res['cleaned'],
                                is_request=res['is_request'],
                                resource=res['resource'],
                                confidence=res['confidence'],
-                               prob=res['prob'])
+                               prob=res['prob'],
+                               **ctx)
 
     # Default GET request
-    return render_template('index.html', prediction=None, tweet='', is_request=None, resource=None, confidence=None)
+    return render_template('index.html', 
+                           prediction=None, 
+                           tweet='', 
+                           cleaned=None,
+                           is_request=None, 
+                           resource=None, 
+                           confidence=None,
+                           prob=None,
+                           **ctx)
 
 # Explicit JSON API Route
 @app.route('/api/predict', methods=['POST'])
@@ -193,11 +229,59 @@ def api_predict():
     return jsonify({
         'tweet': res['tweet'],
         'cleaned': res['cleaned'],
+        'tokens': res['tokens'],
+        'emergency_signals': res['emergency_signals'],
         'is_request': res['is_request'],
         'probability': res['prob'],
         'confidence_percent': res['confidence'],
-        'resource': res['resource'] if res['is_request'] else None
+        'resource': res['resource'],
+        'status': res['status']
     })
+
+@app.route('/api/stats', methods=['GET'])
+@app.route('/api/index/api/stats', methods=['GET'])
+def api_stats():
+    return jsonify(data_service.get_stats())
+
+@app.route('/api/tweets', methods=['GET'])
+@app.route('/api/index/api/tweets', methods=['GET'])
+def api_tweets():
+    page = int(request.args.get('page', 1))
+    page_size = min(int(request.args.get('page_size', 25)), 100)
+    search = request.args.get('search', '')
+    filter_type = request.args.get('filter_type', 'all')
+    resource = request.args.get('resource', 'all')
+    sort_by = request.args.get('sort_by', 'default')
+    result = data_service.query_tweets(
+        page=page, 
+        page_size=page_size, 
+        search=search, 
+        filter_type=filter_type, 
+        resource=resource,
+        sort_by=sort_by
+    )
+    return jsonify(result)
+
+@app.route('/api/dataset', methods=['GET'])
+@app.route('/api/index/api/dataset', methods=['GET'])
+def api_dataset():
+    page = int(request.args.get('page', 1))
+    page_size = min(int(request.args.get('page_size', 25)), 100)
+    search = request.args.get('search', '')
+    label = request.args.get('label', 'all')
+    result = data_service.query_dataset(
+        page=page, 
+        page_size=page_size, 
+        search=search, 
+        label=label
+    )
+    return jsonify(result)
+
+@app.route('/api/model-info', methods=['GET'])
+@app.route('/api/index/api/model-info', methods=['GET'])
+def api_model_info():
+    return jsonify(data_service.get_model_performance())
 
 # Export WSGI application for Vercel
 app = app
+

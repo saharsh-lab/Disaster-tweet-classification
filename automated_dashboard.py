@@ -6,6 +6,46 @@ from datetime import datetime, timedelta
 import numpy as np
 import json
 import os
+import sys
+
+class SafeStream:
+    """Wrapper around stdout/stderr to prevent OSError (Errno 5 EIO) when terminal is disconnected."""
+    def __init__(self, target):
+        self.target = target
+
+    def write(self, s):
+        try:
+            if self.target:
+                return self.target.write(s)
+        except (OSError, BrokenPipeError, IOError):
+            pass
+
+    def flush(self):
+        try:
+            if self.target:
+                return self.target.flush()
+        except (OSError, BrokenPipeError, IOError):
+            pass
+
+    def isatty(self):
+        try:
+            return self.target.isatty() if self.target else False
+        except Exception:
+            return False
+
+    def __getattr__(self, name):
+        return getattr(self.target, name)
+
+if not isinstance(sys.stdout, SafeStream):
+    sys.stdout = SafeStream(sys.stdout)
+if not isinstance(sys.stderr, SafeStream):
+    sys.stderr = SafeStream(sys.stderr)
+
+def safe_print(*args, **kwargs):
+    try:
+        print(*args, **kwargs)
+    except (OSError, BrokenPipeError, IOError):
+        pass
 
 class AutomatedDashboard:
     def __init__(self, results_file="classification_results.csv"):
@@ -19,16 +59,16 @@ class AutomatedDashboard:
             try:
                 df = pd.read_csv(self.results_file)
                 self.results_db = df.to_dict('records')
-                print(f"✅ Loaded {len(self.results_db)} existing results")
+                safe_print(f"✅ Loaded {len(self.results_db)} existing results")
             except Exception as e:
-                print(f"❌ Error loading existing results: {e}")
+                safe_print(f"❌ Error loading existing results: {e}")
     
     def update_dashboard(self, new_results):
         """Update dashboard with new classification results"""
         if new_results:
             self.results_db.extend(new_results)
             self.save_results()
-            print(f"✅ Updated dashboard with {len(new_results)} new results")
+            safe_print(f"✅ Updated dashboard with {len(new_results)} new results")
     
     def save_results(self):
         """Save all results to CSV file"""
@@ -77,7 +117,10 @@ class AutomatedDashboard:
     
     def create_streamlit_app(self):
         """Create Streamlit dashboard"""
-        st.set_page_config(page_title="Disaster Response Classifier Dashboard", layout="wide")
+        try:
+            st.set_page_config(page_title="Disaster Response Classifier Dashboard", layout="wide")
+        except Exception:
+            pass
         
         st.title("Disaster Response Tweet Classifier Dashboard")
         st.markdown("---")
@@ -172,8 +215,9 @@ class AutomatedDashboard:
         
         if self.results_db:
             df = pd.DataFrame(self.results_db)
-            # Show random 20 results
-            recent_results = df.sample(n=25)
+            # Show random sample of up to 25 results
+            sample_size = min(25, len(df))
+            recent_results = df.sample(n=sample_size) if sample_size > 0 else df
             
             # Format for display
             display_df = recent_results[['tweet', 'is_request', 'confidence', 'resource']].copy()
@@ -273,7 +317,7 @@ class AutomatedDashboard:
         with open(filename, 'w') as f:
             f.write(html_content)
         
-        print(f"Report generated: {filename}")
+        safe_print(f"Report generated: {filename}")
         return filename
     
     def print_summary(self):
@@ -281,22 +325,22 @@ class AutomatedDashboard:
         stats = self.get_statistics()
         
         if not stats:
-            print("No data available")
+            safe_print("No data available")
             return
         
-        print("\n" + "="*60)
-        print("DASHBOARD SUMMARY")
-        print("="*60)
-        print(f"Total tweets processed: {stats['total_tweets']}")
-        print(f"Disaster requests detected: {stats['requests_detected']}")
-        print(f"Normal tweets: {stats['normal_tweets']}")
-        print(f"Average confidence: {stats['avg_confidence']:.3f}")
-        print(f"High confidence requests (>80%): {stats['high_confidence_requests']}")
-        print(f"Low confidence requests (<70%): {stats['low_confidence_requests']}")
+        safe_print("\n" + "="*60)
+        safe_print("DASHBOARD SUMMARY")
+        safe_print("="*60)
+        safe_print(f"Total tweets processed: {stats['total_tweets']}")
+        safe_print(f"Disaster requests detected: {stats['requests_detected']}")
+        safe_print(f"Normal tweets: {stats['normal_tweets']}")
+        safe_print(f"Average confidence: {stats['avg_confidence']:.3f}")
+        safe_print(f"High confidence requests (>80%): {stats['high_confidence_requests']}")
+        safe_print(f"Low confidence requests (<70%): {stats['low_confidence_requests']}")
         
         if stats.get('resource_breakdown'):
-            print("\nResource Breakdown:")
+            safe_print("\nResource Breakdown:")
             for resource, count in stats['resource_breakdown'].items():
-                print(f"  {resource}: {count}")
+                safe_print(f"  {resource}: {count}")
         
-        print("="*60) 
+        safe_print("="*60) 

@@ -3,654 +3,3355 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Disaster Response Tweet Classifier | AI Emergency NLP</title>
+  <title>DisasterNet AI — Crisis Signal Intelligence & Tweet Classification</title>
+  <meta name="description" content="Mission-critical crisis intelligence platform and bidirectional NLP tweet classifier for automated natural disaster relief request detection.">
+  
+  <!-- Modern Professional Fonts -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+
+  <!-- Immediate Theme Initializer to prevent flash of wrong theme -->
+  <script>
+    (function() {
+      try {
+        const saved = localStorage.getItem('disasternet_theme');
+        let theme = saved;
+        if (!theme || theme === 'system') {
+          theme = window.matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark';
+        }
+        document.documentElement.setAttribute('data-theme', theme);
+      } catch (e) {}
+    })();
+  </script>
+
   <style>
-    :root {
-      --bg-dark: #0a0f1d;
-      --card-bg: rgba(17, 24, 39, 0.82);
-      --card-border: rgba(255, 255, 255, 0.08);
-      --primary: #38bdf8;
-      --primary-gradient: linear-gradient(135deg, #0284c7 0%, #6366f1 100%);
-      --accent: #818cf8;
-      --text-main: #f8fafc;
-      --text-muted: #94a3b8;
-      --danger: #f43f5e;
-      --danger-bg: rgba(244, 63, 94, 0.12);
-      --danger-border: rgba(244, 63, 94, 0.35);
+    /* ==========================================================================
+       DESIGN SYSTEM: 2026 ENTERPRISE AI / MISSION-CONTROL TELEMETRY
+       Supports both Dark (Default) and Light Modes with strict visual restraint.
+       ========================================================================== */
+    :root, [data-theme="dark"] {
+      --bg-base: #090b0e;
+      --bg-canvas: #0e1117;
+      --bg-panel: #131720;
+      --bg-panel-elevated: #171d28;
+      --bg-hover: #1c2331;
+      --bg-active: #212a3b;
+      
+      --border-subtle: #1c2330;
+      --border-default: #252e3e;
+      --border-focus: #3b82f6;
+      --border-strong: #37435a;
+
+      --text-primary: #f1f5f9;
+      --text-secondary: #94a3b8;
+      --text-muted: #64748b;
+      --text-dim: #475569;
+
+      /* Semantic indicators - intentionally muted & functional */
+      --danger: #ef4444;
+      --danger-bg: rgba(239, 68, 68, 0.08);
+      --danger-border: rgba(239, 68, 68, 0.28);
+      --danger-text: #fca5a5;
+
+      --safe: #38bdf8;
+      --safe-bg: rgba(56, 189, 248, 0.08);
+      --safe-border: rgba(56, 189, 248, 0.25);
+      --safe-text: #7dd3fc;
+
       --success: #10b981;
-      --success-bg: rgba(16, 185, 129, 0.12);
-      --success-border: rgba(16, 185, 129, 0.35);
+      --success-bg: rgba(16, 185, 129, 0.08);
+      --success-border: rgba(16, 185, 129, 0.28);
+      --success-text: #6ee7b7;
+
       --warning: #f59e0b;
+      --warning-bg: rgba(245, 158, 11, 0.08);
+      --warning-border: rgba(245, 158, 11, 0.28);
+      --warning-text: #fcd34d;
+
+      --resource-water: #38bdf8;
+      --resource-medical: #f87171;
+      --resource-shelter: #c084fc;
+      --resource-food: #fbbf24;
+      --resource-rescue: #fb923c;
+      --resource-clothing: #2dd4bf;
+
+      --chart-grid: #1c2330;
+      --chart-axis: #64748b;
+      --card-subtle-bg: rgba(0, 0, 0, 0.15);
+      --brand-symbol-bg: #1e2638;
+      --drawer-shadow: -10px 0 30px rgba(0, 0, 0, 0.5);
+      --skeleton-bg: linear-gradient(90deg, rgba(255,255,255,0.03) 25%, rgba(255,255,255,0.08) 50%, rgba(255,255,255,0.03) 75%);
+
+      --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      --font-mono: 'JetBrains Mono', 'IBM Plex Mono', SFMono-Regular, Consolas, monospace;
+
+      --radius-sm: 4px;
+      --radius-md: 6px;
+      --radius-lg: 8px;
+
+      --topbar-height: 52px;
+      --sidebar-width: 250px;
+    }
+
+    /* 2026 Enterprise Light Theme: calm neutral paper-white and slate */
+    [data-theme="light"] {
+      --bg-base: #f4f6f8;
+      --bg-canvas: #ffffff;
+      --bg-panel: #ffffff;
+      --bg-panel-elevated: #f8fafc;
+      --bg-hover: #f1f5f9;
+      --bg-active: #e2e8f0;
+      
+      --border-subtle: #e2e8f0;
+      --border-default: #cbd5e1;
+      --border-focus: #2563eb;
+      --border-strong: #94a3b8;
+
+      --text-primary: #0f172a;
+      --text-secondary: #475569;
+      --text-muted: #64748b;
+      --text-dim: #94a3b8;
+
+      --danger: #dc2626;
+      --danger-bg: rgba(220, 38, 38, 0.08);
+      --danger-border: rgba(220, 38, 38, 0.28);
+      --danger-text: #b91c1c;
+
+      --safe: #0284c7;
+      --safe-bg: rgba(2, 132, 199, 0.08);
+      --safe-border: rgba(2, 132, 199, 0.25);
+      --safe-text: #0369a1;
+
+      --success: #059669;
+      --success-bg: rgba(5, 150, 105, 0.08);
+      --success-border: rgba(5, 150, 105, 0.28);
+      --success-text: #047857;
+
+      --warning: #d97706;
+      --warning-bg: rgba(217, 119, 6, 0.08);
+      --warning-border: rgba(217, 119, 6, 0.28);
+      --warning-text: #b45309;
+
+      --resource-water: #0284c7;
+      --resource-medical: #dc2626;
+      --resource-shelter: #9333ea;
+      --resource-food: #d97706;
+      --resource-rescue: #ea580c;
+      --resource-clothing: #0d9488;
+
+      --chart-grid: #e2e8f0;
+      --chart-axis: #64748b;
+      --card-subtle-bg: rgba(0, 0, 0, 0.025);
+      --brand-symbol-bg: #eff6ff;
+      --drawer-shadow: -10px 0 30px rgba(0, 0, 0, 0.12);
+      --skeleton-bg: linear-gradient(90deg, rgba(0,0,0,0.03) 25%, rgba(0,0,0,0.07) 50%, rgba(0,0,0,0.03) 75%);
     }
 
     * {
       box-sizing: border-box;
       margin: 0;
       padding: 0;
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
     }
 
     body {
-      font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-      background-color: var(--bg-dark);
-      background-image: 
-        radial-gradient(circle at 15% 15%, rgba(56, 189, 248, 0.08) 0%, transparent 40%),
-        radial-gradient(circle at 85% 85%, rgba(99, 102, 241, 0.08) 0%, transparent 40%),
-        radial-gradient(circle at 50% 50%, rgba(15, 23, 42, 0.5) 0%, transparent 100%);
-      color: var(--text-main);
+      background-color: var(--bg-base);
+      color: var(--text-primary);
+      font-family: var(--font-sans);
+      font-size: 13px;
+      line-height: 1.5;
       min-height: 100vh;
       display: flex;
-      flex-direction: column;
-      align-items: center;
-      padding: 40px 20px;
+      overflow-x: hidden;
     }
 
-    .top-nav {
-      width: 100%;
-      max-width: 860px;
+    /* Tabular figures */
+    .mono {
+      font-family: var(--font-mono);
+      font-feature-settings: "tnum" 1;
+    }
+
+    /* Scrollbars */
+    ::-webkit-scrollbar {
+      width: 6px;
+      height: 6px;
+    }
+    ::-webkit-scrollbar-track {
+      background: var(--bg-canvas);
+    }
+    ::-webkit-scrollbar-thumb {
+      background: var(--border-default);
+      border-radius: var(--radius-sm);
+    }
+    ::-webkit-scrollbar-thumb:hover {
+      background: var(--border-strong);
+    }
+
+    /* ==========================================================================
+       APPLICATION SHELL: SIDEBAR & TOPBAR
+       ========================================================================== */
+    .app-sidebar {
+      width: var(--sidebar-width);
+      background-color: var(--bg-canvas);
+      border-right: 1px solid var(--border-subtle);
       display: flex;
-      justify-content: space-between;
-      align-items: center;
-      margin-bottom: 28px;
+      flex-direction: column;
+      height: 100vh;
+      position: sticky;
+      top: 0;
+      flex-shrink: 0;
+      z-index: 100;
+      transition: transform 0.2s ease;
     }
 
-    .brand {
+    .brand-header {
+      padding: 14px 18px;
+      border-bottom: 1px solid var(--border-subtle);
       display: flex;
       align-items: center;
       gap: 10px;
-      font-weight: 700;
-      font-size: 1.1rem;
-      letter-spacing: -0.02em;
     }
 
-    .brand-icon {
-      width: 32px;
-      height: 32px;
-      background: var(--primary-gradient);
-      border-radius: 8px;
+    .brand-symbol {
+      width: 28px;
+      height: 28px;
+      background: var(--brand-symbol-bg);
+      border: 1px solid var(--border-default);
+      border-radius: var(--radius-sm);
       display: flex;
       align-items: center;
       justify-content: center;
-      font-size: 1.1rem;
-      box-shadow: 0 4px 12px rgba(56, 189, 248, 0.3);
+      color: var(--safe);
+      font-size: 13px;
+      font-weight: 700;
     }
 
-    .nav-actions {
+    .brand-meta {
+      display: flex;
+      flex-direction: column;
+    }
+
+    .brand-title {
+      font-size: 13px;
+      font-weight: 700;
+      letter-spacing: -0.01em;
+      color: var(--text-primary);
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .brand-sub {
+      font-size: 10px;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      font-weight: 500;
+    }
+
+    .nav-group-label {
+      font-size: 10px;
+      font-weight: 600;
+      color: var(--text-dim);
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      padding: 16px 18px 6px;
+    }
+
+    .nav-list {
+      list-style: none;
+      padding: 0 10px;
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+    }
+
+    .nav-item {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 8px 12px;
+      border-radius: var(--radius-sm);
+      color: var(--text-secondary);
+      text-decoration: none;
+      font-size: 12.5px;
+      font-weight: 500;
+      cursor: pointer;
+      border: 1px solid transparent;
+      transition: all 0.15s ease;
+      background: transparent;
+      width: 100%;
+      text-align: left;
+    }
+
+    .nav-item:hover {
+      background: var(--bg-panel);
+      color: var(--text-primary);
+      border-color: var(--border-subtle);
+    }
+
+    .nav-item.active {
+      background: var(--bg-hover);
+      color: var(--text-primary);
+      border-color: var(--border-default);
+      font-weight: 600;
+    }
+
+    .nav-item .nav-icon {
+      width: 16px;
+      height: 16px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      opacity: 0.75;
+      flex-shrink: 0;
+    }
+
+    .nav-item.active .nav-icon {
+      opacity: 1;
+      color: #38bdf8;
+    }
+
+    .nav-badge {
+      margin-left: auto;
+      font-size: 10.5px;
+      padding: 1px 6px;
+      border-radius: var(--radius-sm);
+      background: var(--bg-panel);
+      border: 1px solid var(--border-subtle);
+      color: var(--text-muted);
+    }
+
+    .sidebar-footer {
+      margin-top: auto;
+      padding: 14px 16px;
+      border-top: 1px solid var(--border-subtle);
+      background: var(--card-subtle-bg);
+    }
+
+    .sys-status-card {
+      display: flex;
+      flex-direction: column;
+      gap: 5px;
+    }
+
+    .sys-status-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      font-size: 11px;
+    }
+
+    .status-indicator {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      color: var(--success-text);
+      font-weight: 500;
+    }
+
+    .pulse-dot {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: var(--success);
+      box-shadow: 0 0 0 2px rgba(16, 185, 129, 0.2);
+    }
+
+    /* Main Container */
+    .app-main {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      min-width: 0;
+      background-color: var(--bg-base);
+    }
+
+    /* Top Navigation Bar */
+    .app-topbar {
+      height: var(--topbar-height);
+      background: var(--bg-canvas);
+      border-bottom: 1px solid var(--border-subtle);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 24px;
+      position: sticky;
+      top: 0;
+      z-index: 90;
+    }
+
+    .topbar-left {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+    }
+
+    .mobile-menu-btn {
+      display: none;
+      background: transparent;
+      border: 1px solid var(--border-default);
+      color: var(--text-primary);
+      width: 32px;
+      height: 32px;
+      border-radius: var(--radius-sm);
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+    }
+
+    .breadcrumb {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 12.5px;
+      color: var(--text-muted);
+    }
+
+    .breadcrumb-sep {
+      color: var(--text-dim);
+    }
+
+    .breadcrumb-current {
+      color: var(--text-primary);
+      font-weight: 600;
+    }
+
+    .topbar-center {
+      flex: 1;
+      max-width: 480px;
+      margin: 0 24px;
+    }
+
+    .search-box {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      background: var(--bg-panel);
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-sm);
+      padding: 6px 12px;
+      color: var(--text-secondary);
+      font-size: 12px;
+      transition: all 0.15s ease;
+    }
+
+    .search-box:focus-within {
+      border-color: var(--border-focus);
+      background: var(--bg-panel-elevated);
+      color: var(--text-primary);
+    }
+
+    .search-input {
+      background: transparent;
+      border: none;
+      outline: none;
+      color: var(--text-primary);
+      font-family: inherit;
+      font-size: 12.5px;
+      width: 100%;
+    }
+
+    .search-input::placeholder {
+      color: var(--text-dim);
+    }
+
+    .kbd-shortcut {
+      background: var(--bg-canvas);
+      border: 1px solid var(--border-default);
+      border-radius: 3px;
+      padding: 1px 5px;
+      font-size: 10px;
+      color: var(--text-muted);
+      font-family: var(--font-mono);
+    }
+
+    .topbar-right {
       display: flex;
       align-items: center;
       gap: 12px;
     }
 
-    .status-badge {
+    .telemetry-chip {
       display: inline-flex;
       align-items: center;
       gap: 6px;
-      padding: 6px 12px;
-      background: rgba(16, 185, 129, 0.1);
-      border: 1px solid rgba(16, 185, 129, 0.25);
-      border-radius: 20px;
-      font-size: 0.8rem;
-      color: #34d399;
-      font-weight: 500;
-    }
-
-    .status-dot {
-      width: 7px;
-      height: 7px;
-      background: #10b981;
-      border-radius: 50%;
-      box-shadow: 0 0 8px #10b981;
-      animation: pulse 2s infinite;
-    }
-
-    @keyframes pulse {
-      0% { opacity: 1; }
-      50% { opacity: 0.4; }
-      100% { opacity: 1; }
-    }
-
-    .dashboard-link {
-      display: inline-flex;
-      align-items: center;
-      gap: 6px;
-      padding: 6px 14px;
-      background: rgba(99, 102, 241, 0.15);
-      border: 1px solid rgba(99, 102, 241, 0.35);
-      border-radius: 8px;
-      color: #a5b4fc;
-      text-decoration: none;
-      font-size: 0.85rem;
-      font-weight: 500;
-      transition: all 0.2s ease;
-    }
-
-    .dashboard-link:hover {
-      background: rgba(99, 102, 241, 0.25);
-      color: #ffffff;
-      transform: translateY(-1px);
-    }
-
-    .main-card {
-      width: 100%;
-      max-width: 860px;
-      background: var(--card-bg);
-      backdrop-filter: blur(20px);
-      -webkit-backdrop-filter: blur(20px);
-      border: 1px solid var(--card-border);
-      border-radius: 20px;
-      padding: 36px;
-      box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
-    }
-
-    .header-section {
-      text-align: center;
-      margin-bottom: 28px;
-    }
-
-    .tagline {
-      display: inline-block;
-      font-size: 0.75rem;
-      font-weight: 600;
-      text-transform: uppercase;
-      letter-spacing: 0.1em;
-      color: var(--primary);
-      margin-bottom: 8px;
-      background: rgba(56, 189, 248, 0.1);
+      font-size: 11.5px;
       padding: 4px 10px;
-      border-radius: 6px;
-      border: 1px solid rgba(56, 189, 248, 0.2);
+      border-radius: var(--radius-sm);
+      background: var(--bg-panel);
+      border: 1px solid var(--border-subtle);
+      color: var(--text-secondary);
     }
 
-    h1 {
-      font-size: 2.2rem;
-      font-weight: 800;
-      letter-spacing: -0.03em;
-      margin-bottom: 10px;
-      background: linear-gradient(135deg, #ffffff 40%, #94a3b8 100%);
-      -webkit-background-clip: text;
-      -webkit-text-fill-color: transparent;
-    }
-
-    .subtitle {
-      color: var(--text-muted);
-      font-size: 0.95rem;
-      max-width: 600px;
-      margin: 0 auto;
-      line-height: 1.5;
-    }
-
-    /* Preset Buttons */
-    .presets-label {
-      font-size: 0.8rem;
+    .telemetry-chip strong {
+      color: var(--text-primary);
       font-weight: 600;
+    }
+
+    .theme-toggle-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      background: var(--bg-panel);
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-sm);
+      padding: 5px 11px;
+      color: var(--text-secondary);
+      font-size: 11.5px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.15s ease;
+      font-family: inherit;
+    }
+
+    .theme-toggle-btn:hover {
+      background: var(--bg-hover);
+      color: var(--text-primary);
+      border-color: var(--border-default);
+    }
+
+    .theme-toggle-icon {
+      font-size: 13px;
+      line-height: 1;
+    }
+
+    .theme-card-group {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+      gap: 10px;
+      margin-top: 8px;
+    }
+
+    .theme-card {
+      background: var(--bg-canvas);
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-sm);
+      padding: 10px 14px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      transition: all 0.15s ease;
+      font-size: 12px;
+      color: var(--text-secondary);
+    }
+
+    .theme-card:hover {
+      background: var(--bg-hover);
+      color: var(--text-primary);
+      border-color: var(--border-default);
+    }
+
+    .theme-card.active {
+      border-color: var(--border-focus);
+      background: var(--bg-panel);
+      color: var(--text-primary);
+      font-weight: 600;
+    }
+
+    .btn-action-primary {
+      background: #2563eb;
+      border: 1px solid #3b82f6;
+      color: #ffffff;
+      padding: 6px 14px;
+      border-radius: var(--radius-sm);
+      font-size: 12.5px;
+      font-weight: 600;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      transition: all 0.15s ease;
+    }
+
+    .btn-action-primary:hover {
+      background: #1d4ed8;
+    }
+
+    /* Content Area */
+    .app-content {
+      padding: 24px;
+      max-width: 1440px;
+      width: 100%;
+      margin: 0 auto;
+      flex: 1;
+    }
+
+    .tab-view {
+      display: none;
+    }
+    .tab-view.active {
+      display: block;
+      animation: tabFadeIn 0.15s ease;
+    }
+
+    @keyframes tabFadeIn {
+      from { opacity: 0; transform: translateY(3px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    /* ==========================================================================
+       COMPONENTS: KPI STRIP, PANELS, DATA TABLES, CHARTS
+       ========================================================================== */
+    .page-header {
+      margin-bottom: 20px;
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      flex-wrap: wrap;
+      gap: 12px;
+    }
+
+    .page-title-wrap {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+
+    .page-pretitle {
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: #38bdf8;
+      font-weight: 600;
+    }
+
+    .page-title {
+      font-size: 20px;
+      font-weight: 700;
+      color: var(--text-primary);
+      letter-spacing: -0.02em;
+    }
+
+    .page-desc {
+      font-size: 13px;
+      color: var(--text-secondary);
+      max-width: 760px;
+    }
+
+    .page-actions {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    /* KPI / Metric Strip */
+    .kpi-strip {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+      background: var(--bg-panel);
+      border: 1px solid var(--border-default);
+      border-radius: var(--radius-md);
+      margin-bottom: 24px;
+      overflow: hidden;
+    }
+
+    .kpi-cell {
+      padding: 14px 18px;
+      border-right: 1px solid var(--border-subtle);
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+
+    .kpi-cell:last-child {
+      border-right: none;
+    }
+
+    .kpi-label {
+      font-size: 11px;
       color: var(--text-muted);
       text-transform: uppercase;
       letter-spacing: 0.05em;
-      margin-bottom: 10px;
+      font-weight: 600;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .kpi-value {
+      font-size: 22px;
+      font-weight: 700;
+      color: var(--text-primary);
+      letter-spacing: -0.02em;
+      line-height: 1.2;
+    }
+
+    .kpi-sub {
+      font-size: 11px;
+      color: var(--text-secondary);
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+
+    .kpi-sub.danger { color: var(--danger-text); }
+    .kpi-sub.safe { color: var(--safe-text); }
+    .kpi-sub.success { color: var(--success-text); }
+
+    /* Layout Grid */
+    .grid-2col {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 20px;
+      margin-bottom: 24px;
+    }
+
+    .grid-3col {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 20px;
+      margin-bottom: 24px;
+    }
+
+    @media (max-width: 1024px) {
+      .grid-2col, .grid-3col {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    /* Structured Panel */
+    .panel {
+      background: var(--bg-panel);
+      border: 1px solid var(--border-default);
+      border-radius: var(--radius-md);
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .panel-header {
+      padding: 12px 18px;
+      border-bottom: 1px solid var(--border-subtle);
+      background: var(--card-subtle-bg);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .panel-title {
+      font-size: 12.5px;
+      font-weight: 600;
+      color: var(--text-primary);
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .panel-subtitle {
+      font-size: 11.5px;
+      color: var(--text-muted);
+    }
+
+    .panel-body {
+      padding: 18px;
+      flex: 1;
+    }
+
+    /* Primary Visualization: Segmented Telemetry Proportion Bar */
+    .telemetry-bar-wrap {
+      margin-bottom: 16px;
+    }
+
+    .telemetry-bar-labels {
+      display: flex;
+      justify-content: space-between;
+      font-size: 11.5px;
+      margin-bottom: 6px;
+    }
+
+    .segmented-bar {
+      height: 12px;
+      border-radius: var(--radius-sm);
+      overflow: hidden;
+      display: flex;
+      background: var(--bg-canvas);
+      border: 1px solid var(--border-subtle);
+    }
+
+    .segment-disaster {
+      background: #ef4444;
+      height: 100%;
+      transition: width 0.4s ease;
+    }
+
+    .segment-normal {
+      background: #38bdf8;
+      height: 100%;
+      transition: width 0.4s ease;
+    }
+
+    /* Chart SVG Containers */
+    .chart-container {
+      width: 100%;
+      position: relative;
+    }
+
+    svg.chart-svg {
+      width: 100%;
+      height: auto;
+      display: block;
+      overflow: visible;
+    }
+
+    .chart-grid-line {
+      stroke: var(--border-subtle);
+      stroke-dasharray: 2, 2;
+    }
+
+    .chart-axis-text {
+      fill: var(--text-muted);
+      font-size: 10px;
+      font-family: var(--font-mono);
+    }
+
+    /* Embedded Model Insight Box */
+    .insight-card {
+      background: var(--safe-bg);
+      border: 1px solid var(--safe-border);
+      border-left: 3px solid var(--safe);
+      border-radius: var(--radius-sm);
+      padding: 12px 16px;
+      margin-top: 14px;
+    }
+
+    .insight-header {
+      font-size: 10.5px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: var(--safe);
+      margin-bottom: 4px;
       display: flex;
       align-items: center;
       gap: 6px;
     }
 
-    .preset-container {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 8px;
-      margin-bottom: 20px;
+    .insight-body {
+      font-size: 12.5px;
+      color: var(--text-primary);
+      line-height: 1.5;
     }
 
-    .preset-pill {
-      background: rgba(255, 255, 255, 0.04);
-      border: 1px solid rgba(255, 255, 255, 0.08);
-      border-radius: 20px;
-      color: #cbd5e1;
-      font-size: 0.82rem;
-      padding: 6px 14px;
-      cursor: pointer;
-      transition: all 0.2s ease;
-      font-family: inherit;
+    /* Badges */
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      padding: 2px 7px;
+      border-radius: var(--radius-sm);
+      font-size: 11px;
+      font-weight: 600;
+      letter-spacing: 0.02em;
+      border: 1px solid transparent;
+      white-space: nowrap;
     }
 
-    .preset-pill:hover {
-      background: rgba(56, 189, 248, 0.12);
-      border-color: rgba(56, 189, 248, 0.3);
-      color: var(--primary);
-      transform: translateY(-1px);
+    .badge-danger {
+      background: var(--danger-bg);
+      border-color: var(--danger-border);
+      color: var(--danger-text);
     }
 
-    /* Form Styles */
-    form {
-      display: flex;
-      flex-direction: column;
-      gap: 16px;
+    .badge-safe {
+      background: var(--safe-bg);
+      border-color: var(--safe-border);
+      color: var(--safe-text);
     }
 
-    .textarea-wrapper {
-      position: relative;
+    .badge-neutral {
+      background: var(--bg-hover);
+      border-color: var(--border-default);
+      color: var(--text-secondary);
     }
 
-    textarea {
-      width: 100%;
-      min-height: 120px;
+    .badge-resource {
+      font-size: 10.5px;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+    }
+
+    .badge-resource.water { background: rgba(56, 189, 248, 0.1); border-color: rgba(56, 189, 248, 0.3); color: #38bdf8; }
+    .badge-resource.medical { background: rgba(248, 113, 113, 0.1); border-color: rgba(248, 113, 113, 0.3); color: #f87171; }
+    .badge-resource.shelter { background: rgba(192, 132, 252, 0.1); border-color: rgba(192, 132, 252, 0.3); color: #c084fc; }
+    .badge-resource.food { background: rgba(251, 191, 36, 0.1); border-color: rgba(251, 191, 36, 0.3); color: #fbbf24; }
+    .badge-resource.rescue { background: rgba(251, 146, 60, 0.1); border-color: rgba(251, 146, 60, 0.3); color: #fb923c; }
+    .badge-resource.clothing { background: rgba(45, 212, 191, 0.1); border-color: rgba(45, 212, 191, 0.3); color: #2dd4bf; }
+    .badge-resource.unspecified { background: rgba(148, 163, 184, 0.1); border-color: rgba(148, 163, 184, 0.25); color: #94a3b8; }
+
+    /* Interactive Live Triage Box */
+    .triage-console {
+      background: var(--bg-canvas);
+      border: 1px solid var(--border-default);
+      border-radius: var(--radius-md);
       padding: 16px;
-      background: #0f172a;
-      border: 1px solid #334155;
-      border-radius: 12px;
-      color: #f8fafc;
-      font-family: inherit;
-      font-size: 0.98rem;
-      line-height: 1.6;
-      resize: vertical;
-      outline: none;
-      transition: all 0.2s ease;
-      box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.3);
+      margin-bottom: 24px;
     }
 
-    textarea:focus {
-      border-color: #38bdf8;
-      box-shadow: 0 0 0 3px rgba(56, 189, 248, 0.2), inset 0 2px 4px rgba(0, 0, 0, 0.2);
-    }
-
-    .form-bottom {
+    .triage-header {
       display: flex;
       justify-content: space-between;
       align-items: center;
-      margin-top: 4px;
+      margin-bottom: 12px;
     }
 
-    .char-hint {
-      font-size: 0.8rem;
-      color: #64748b;
+    .triage-title {
+      font-size: 12.5px;
+      font-weight: 600;
+      color: var(--text-primary);
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .preset-strip {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      margin-bottom: 12px;
+    }
+
+    .preset-btn {
+      background: var(--bg-panel);
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-sm);
+      color: var(--text-secondary);
+      font-size: 11.5px;
+      padding: 4px 10px;
+      cursor: pointer;
+      font-family: inherit;
+      transition: all 0.15s ease;
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+    }
+
+    .preset-btn:hover {
+      background: var(--bg-hover);
+      color: var(--text-primary);
+      border-color: var(--border-default);
+    }
+
+    .triage-form {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .triage-textarea {
+      width: 100%;
+      min-height: 80px;
+      background: var(--bg-base);
+      border: 1px solid var(--border-default);
+      border-radius: var(--radius-sm);
+      padding: 10px 14px;
+      color: var(--text-primary);
+      font-family: inherit;
+      font-size: 13px;
+      line-height: 1.5;
+      resize: vertical;
+      outline: none;
+      transition: border-color 0.15s ease;
+    }
+
+    .triage-textarea:focus {
+      border-color: var(--border-focus);
+    }
+
+    .triage-controls {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .triage-hint {
+      font-size: 11px;
+      color: var(--text-muted);
     }
 
     .btn-group {
       display: flex;
-      gap: 10px;
+      gap: 8px;
     }
 
-    .btn-clear {
+    .btn-secondary {
       background: transparent;
-      border: 1px solid rgba(255, 255, 255, 0.1);
-      color: #94a3b8;
-      border-radius: 10px;
-      padding: 12px 18px;
-      font-size: 0.9rem;
+      border: 1px solid var(--border-default);
+      color: var(--text-secondary);
+      padding: 6px 14px;
+      border-radius: var(--radius-sm);
+      font-size: 12px;
       font-weight: 500;
       cursor: pointer;
-      transition: all 0.2s;
+      transition: all 0.15s ease;
     }
 
-    .btn-clear:hover {
-      background: rgba(255, 255, 255, 0.05);
-      color: #e2e8f0;
+    .btn-secondary:hover {
+      background: var(--bg-hover);
+      color: var(--text-primary);
     }
 
-    .btn-submit {
-      background: var(--primary-gradient);
-      border: none;
+    .btn-primary {
+      background: #2563eb;
+      border: 1px solid #3b82f6;
       color: #ffffff;
-      border-radius: 10px;
-      padding: 12px 28px;
-      font-size: 0.95rem;
+      padding: 6px 18px;
+      border-radius: var(--radius-sm);
+      font-size: 12.5px;
       font-weight: 600;
       cursor: pointer;
-      display: inline-flex;
-      align-items: center;
-      gap: 8px;
-      box-shadow: 0 4px 16px rgba(56, 189, 248, 0.3);
-      transition: all 0.2s ease;
-    }
-
-    .btn-submit:hover {
-      transform: translateY(-2px);
-      box-shadow: 0 6px 20px rgba(56, 189, 248, 0.45);
-      filter: brightness(1.05);
-    }
-
-    .btn-submit:active {
-      transform: translateY(0);
-    }
-
-    /* Result Card */
-    .result-container {
-      margin-top: 32px;
-      padding-top: 28px;
-      border-top: 1px solid rgba(255, 255, 255, 0.08);
-      animation: fadeIn 0.3s ease;
-    }
-
-    @keyframes fadeIn {
-      from { opacity: 0; transform: translateY(8px); }
-      to { opacity: 1; transform: translateY(0); }
-    }
-
-    .result-card {
-      border-radius: 14px;
-      padding: 24px;
-      border: 1px solid;
-      position: relative;
-      overflow: hidden;
-    }
-
-    .result-card.is-emergency {
-      background: var(--danger-bg);
-      border-color: var(--danger-border);
-    }
-
-    .result-card.is-safe {
-      background: var(--success-bg);
-      border-color: var(--success-border);
-    }
-
-    .result-card.is-info {
-      background: rgba(148, 163, 184, 0.08);
-      border-color: rgba(148, 163, 184, 0.2);
-    }
-
-    .result-header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      margin-bottom: 16px;
-      flex-wrap: wrap;
-      gap: 12px;
-    }
-
-    .result-badge {
-      display: inline-flex;
-      align-items: center;
-      gap: 8px;
-      font-weight: 700;
-      font-size: 1.05rem;
-      letter-spacing: -0.01em;
-    }
-
-    .badge-emergency {
-      color: #fb7185;
-    }
-
-    .badge-safe {
-      color: #34d399;
-    }
-
-    .badge-info {
-      color: #cbd5e1;
-    }
-
-    .resource-badge {
       display: inline-flex;
       align-items: center;
       gap: 6px;
-      background: rgba(255, 255, 255, 0.1);
-      border: 1px solid rgba(255, 255, 255, 0.15);
-      border-radius: 20px;
-      padding: 4px 14px;
-      font-size: 0.85rem;
-      font-weight: 600;
-      color: #ffffff;
-      text-transform: uppercase;
-      letter-spacing: 0.05em;
+      transition: all 0.15s ease;
     }
 
-    .resource-water { background: rgba(56, 189, 248, 0.2); border-color: rgba(56, 189, 248, 0.5); color: #7dd3fc; }
-    .resource-food { background: rgba(245, 158, 11, 0.2); border-color: rgba(245, 158, 11, 0.5); color: #fcd34d; }
-    .resource-medical { background: rgba(239, 68, 68, 0.2); border-color: rgba(239, 68, 68, 0.5); color: #fca5a5; }
-    .resource-shelter { background: rgba(168, 85, 247, 0.2); border-color: rgba(168, 85, 247, 0.5); color: #d8b4fe; }
-    .resource-rescue { background: rgba(249, 115, 22, 0.2); border-color: rgba(249, 115, 22, 0.5); color: #fdba74; }
-    .resource-clothing { background: rgba(20, 184, 166, 0.2); border-color: rgba(20, 184, 166, 0.5); color: #5eead4; }
+    .btn-primary:hover {
+      background: #1d4ed8;
+    }
 
-    .result-text {
-      font-size: 1.15rem;
+    /* Live Result Banner */
+    .live-result-panel {
+      margin-top: 14px;
+      padding: 14px;
+      border-radius: var(--radius-sm);
+      border: 1px solid;
+      background: var(--bg-panel);
+    }
+
+    .live-result-panel.is-disaster {
+      border-color: var(--danger-border);
+      background: var(--danger-bg);
+    }
+
+    .live-result-panel.is-normal {
+      border-color: var(--safe-border);
+      background: var(--safe-bg);
+    }
+
+    .result-metric-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+      gap: 10px;
+      margin-top: 12px;
+    }
+
+    .result-metric-item {
+      background: var(--bg-base);
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-sm);
+      padding: 8px 12px;
+    }
+
+    .result-metric-item .label {
+      font-size: 10.5px;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+    }
+
+    .result-metric-item .val {
+      font-size: 14px;
+      font-weight: 700;
+      color: var(--text-primary);
+      margin-top: 2px;
+    }
+
+    /* ==========================================================================
+       DATA TABLE SYSTEM (Analysis & Dataset views)
+       ========================================================================== */
+    .table-toolbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      padding: 12px 16px;
+      border-bottom: 1px solid var(--border-subtle);
+      background: var(--card-subtle-bg);
+      flex-wrap: wrap;
+    }
+
+    .filter-pills {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      flex-wrap: wrap;
+    }
+
+    .filter-pill {
+      background: var(--bg-panel);
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-sm);
+      padding: 4px 10px;
+      font-size: 11.5px;
+      color: var(--text-secondary);
+      cursor: pointer;
+      font-family: inherit;
+      transition: all 0.15s ease;
+    }
+
+    .filter-pill:hover {
+      background: var(--bg-hover);
+      color: var(--text-primary);
+    }
+
+    .filter-pill.active {
+      background: var(--bg-hover);
+      border-color: var(--border-focus);
+      color: var(--text-primary);
       font-weight: 600;
-      margin-bottom: 20px;
+    }
+
+    .table-container {
+      width: 100%;
+      overflow-x: auto;
+    }
+
+    .data-table {
+      width: 100%;
+      border-collapse: collapse;
+      text-align: left;
+      font-size: 12.5px;
+    }
+
+    .data-table th {
+      padding: 10px 14px;
+      font-size: 10.5px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: var(--text-muted);
+      border-bottom: 1px solid var(--border-default);
+      background: var(--bg-panel);
+      white-space: nowrap;
+    }
+
+    .data-table td {
+      padding: 10px 14px;
+      border-bottom: 1px solid var(--border-subtle);
+      color: var(--text-secondary);
+      vertical-align: middle;
+    }
+
+    .data-table tr:hover td {
+      background: var(--bg-hover);
+      color: var(--text-primary);
+      cursor: pointer;
+    }
+
+    .data-table td.tweet-cell {
+      max-width: 480px;
+      color: var(--text-primary);
       line-height: 1.4;
     }
 
-    /* Metric Visualizer */
-    .metric-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-      gap: 14px;
-      margin-top: 16px;
+    .mini-conf-bar {
+      display: inline-block;
+      width: 40px;
+      height: 4px;
+      background: var(--bg-canvas);
+      border-radius: 2px;
+      overflow: hidden;
+      margin-left: 6px;
+      vertical-align: middle;
     }
 
-    .metric-box {
-      background: rgba(0, 0, 0, 0.25);
-      border-radius: 10px;
+    .mini-conf-fill {
+      height: 100%;
+      background: #38bdf8;
+    }
+    .mini-conf-fill.high {
+      background: #ef4444;
+    }
+
+    .table-footer {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
       padding: 12px 16px;
-      border: 1px solid rgba(255, 255, 255, 0.05);
+      border-top: 1px solid var(--border-subtle);
+      background: var(--card-subtle-bg);
+      font-size: 11.5px;
+      color: var(--text-muted);
     }
 
-    .metric-label {
-      font-size: 0.75rem;
-      color: var(--text-muted);
+    .pagination-controls {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .page-btn {
+      background: var(--bg-panel);
+      border: 1px solid var(--border-subtle);
+      color: var(--text-secondary);
+      padding: 3px 9px;
+      border-radius: var(--radius-sm);
+      cursor: pointer;
+      font-size: 11.5px;
+    }
+
+    .page-btn:hover:not(:disabled) {
+      background: var(--bg-hover);
+      color: var(--text-primary);
+    }
+
+    .page-btn:disabled {
+      opacity: 0.4;
+      cursor: not-allowed;
+    }
+
+    /* ==========================================================================
+       SLIDE-OVER TWEET DETAIL DRAWER
+       ========================================================================== */
+    .drawer-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(0, 0, 0, 0.6);
+      z-index: 200;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.2s ease;
+    }
+
+    .drawer-overlay.open {
+      opacity: 1;
+      pointer-events: auto;
+    }
+
+    .drawer-panel {
+      position: fixed;
+      top: 0;
+      right: 0;
+      bottom: 0;
+      width: 100%;
+      max-width: 520px;
+      background: var(--bg-canvas);
+      border-left: 1px solid var(--border-default);
+      z-index: 210;
+      transform: translateX(100%);
+      transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+      display: flex;
+      flex-direction: column;
+      box-shadow: var(--drawer-shadow);
+    }
+
+    .drawer-panel.open {
+      transform: translateX(0);
+    }
+
+    .drawer-header {
+      padding: 16px 20px;
+      border-bottom: 1px solid var(--border-subtle);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .drawer-title {
+      font-size: 13px;
+      font-weight: 700;
       text-transform: uppercase;
       letter-spacing: 0.05em;
-      margin-bottom: 6px;
+      color: var(--text-primary);
     }
 
-    .metric-value {
-      font-size: 1.2rem;
-      font-weight: 700;
-      color: #ffffff;
+    .drawer-close {
+      background: transparent;
+      border: 1px solid var(--border-default);
+      color: var(--text-muted);
+      width: 28px;
+      height: 28px;
+      border-radius: var(--radius-sm);
       display: flex;
-      align-items: baseline;
-      gap: 4px;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      font-size: 16px;
     }
 
-    .progress-bar-container {
-      width: 100%;
-      height: 6px;
-      background: rgba(255, 255, 255, 0.1);
-      border-radius: 4px;
-      margin-top: 8px;
+    .drawer-close:hover {
+      color: var(--text-primary);
+      background: var(--bg-hover);
+    }
+
+    .drawer-body {
+      padding: 20px;
+      overflow-y: auto;
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      gap: 18px;
+    }
+
+    .drawer-section-title {
+      font-size: 11px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      color: var(--text-muted);
+      margin-bottom: 8px;
+    }
+
+    .tweet-display-card {
+      background: var(--bg-panel);
+      border: 1px solid var(--border-default);
+      border-radius: var(--radius-sm);
+      padding: 14px 16px;
+      font-size: 14px;
+      line-height: 1.5;
+      color: var(--text-primary);
+    }
+
+    .token-chip-container {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 5px;
+    }
+
+    .token-chip {
+      background: var(--bg-panel);
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-sm);
+      padding: 2px 7px;
+      font-size: 11px;
+      font-family: var(--font-mono);
+      color: var(--text-secondary);
+    }
+
+    .token-chip.match {
+      background: rgba(239, 68, 68, 0.12);
+      border-color: rgba(239, 68, 68, 0.35);
+      color: #fca5a5;
+      font-weight: 600;
+    }
+
+    .meta-list {
+      display: flex;
+      flex-direction: column;
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-sm);
       overflow: hidden;
     }
 
-    .progress-bar {
-      height: 100%;
-      border-radius: 4px;
-      transition: width 0.6s ease;
-    }
-
-    .bar-danger { background: linear-gradient(90deg, #f59e0b, #ef4444); }
-    .bar-safe { background: linear-gradient(90deg, #10b981, #06b6d4); }
-
-    /* Footer Details */
-    .system-footer {
-      width: 100%;
-      max-width: 860px;
-      margin-top: 30px;
+    .meta-row {
       display: flex;
       justify-content: space-between;
-      align-items: center;
-      flex-wrap: wrap;
-      gap: 16px;
-      font-size: 0.85rem;
-      color: #64748b;
-      padding: 0 10px;
+      padding: 8px 12px;
+      border-bottom: 1px solid var(--border-subtle);
+      font-size: 12px;
+      background: var(--bg-panel);
     }
 
-    .tech-stack {
+    .meta-row:last-child {
+      border-bottom: none;
+    }
+
+    .meta-key {
+      color: var(--text-muted);
+    }
+
+    .meta-val {
+      color: var(--text-primary);
+      font-weight: 500;
+    }
+
+    /* ==========================================================================
+       MODEL PERFORMANCE & CONFUSION MATRIX
+       ========================================================================== */
+    .cm-grid {
+      display: grid;
+      grid-template-columns: 90px 1fr 1fr;
+      grid-template-rows: 30px 1fr 1fr;
+      gap: 4px;
+      font-size: 11.5px;
+      max-width: 440px;
+      margin: 10px 0;
+    }
+
+    .cm-header {
       display: flex;
-      gap: 14px;
+      align-items: center;
+      justify-content: center;
+      font-weight: 600;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      font-size: 10.5px;
+      letter-spacing: 0.04em;
     }
 
-    .tech-pill {
-      font-family: 'JetBrains Mono', monospace;
-      font-size: 0.75rem;
-      color: #94a3b8;
+    .cm-cell {
+      background: var(--bg-canvas);
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-sm);
+      padding: 12px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+    }
+
+    .cm-cell.tn {
+      background: var(--safe-bg);
+      border-color: var(--safe-border);
+    }
+    .cm-cell.tp {
+      background: var(--danger-bg);
+      border-color: var(--danger-border);
+    }
+    .cm-cell.error-cell {
+      background: var(--warning-bg);
+      border-color: var(--warning-border);
+    }
+
+    .cm-val {
+      font-size: 18px;
+      font-weight: 700;
+      color: var(--text-primary);
+    }
+
+    .cm-sub {
+      font-size: 10px;
+      color: var(--text-muted);
+      margin-top: 2px;
+    }
+
+    /* ==========================================================================
+       METHODOLOGY WORKFLOW PIPELINE
+       ========================================================================== */
+    .pipeline-diagram {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      position: relative;
+      margin: 16px 0;
+    }
+
+    .pipeline-step {
+      display: flex;
+      align-items: flex-start;
+      gap: 14px;
+      background: var(--bg-canvas);
+      border: 1px solid var(--border-default);
+      border-radius: var(--radius-sm);
+      padding: 12px 16px;
+      position: relative;
+    }
+
+    .step-num {
+      width: 24px;
+      height: 24px;
+      border-radius: var(--radius-sm);
+      background: var(--bg-panel);
+      border: 1px solid var(--border-subtle);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 11px;
+      font-weight: 700;
+      font-family: var(--font-mono);
+      color: #38bdf8;
+      flex-shrink: 0;
+    }
+
+    .step-content {
+      flex: 1;
+    }
+
+    .step-name {
+      font-size: 12.5px;
+      font-weight: 600;
+      color: var(--text-primary);
+    }
+
+    .step-desc {
+      font-size: 11.5px;
+      color: var(--text-secondary);
+      margin-top: 2px;
+      line-height: 1.4;
+    }
+
+    .step-meta {
+      font-size: 11px;
+      font-family: var(--font-mono);
+      color: var(--text-muted);
+      margin-top: 4px;
+    }
+
+    /* Empty states */
+    .empty-state {
+      padding: 40px 20px;
+      text-align: center;
+      color: var(--text-muted);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .empty-title {
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--text-secondary);
+    }
+
+    /* Skeleton Loading */
+    .skeleton {
+      background: var(--skeleton-bg);
+      background-size: 200% 100%;
+      animation: skeletonPulse 1.5s infinite;
+      border-radius: var(--radius-sm);
+    }
+
+    @keyframes skeletonPulse {
+      0% { background-position: 200% 0; }
+      100% { background-position: -200% 0; }
+    }
+
+    /* Responsive rules */
+    @media (max-width: 860px) {
+      .app-sidebar {
+        position: fixed;
+        left: 0;
+        top: 0;
+        bottom: 0;
+        transform: translateX(-100%);
+        z-index: 300;
+      }
+      .app-sidebar.mobile-open {
+        transform: translateX(0);
+      }
+      .mobile-menu-btn {
+        display: inline-flex;
+      }
+      .topbar-center {
+        display: none;
+      }
+      .app-content {
+        padding: 16px;
+      }
     }
   </style>
 </head>
 <body>
 
-  <!-- Top Navigation Bar -->
-  <nav class="top-nav">
-    <div class="brand">
-      <div class="brand-icon">🚨</div>
-      <span>DisasterNet AI</span>
-    </div>
-    <div class="nav-actions">
-      <div class="status-badge">
-        <span class="status-dot"></span>
-        <span>RNN Model Online</span>
-      </div>
-      <a href="http://127.0.0.1:8501" target="_blank" class="dashboard-link">
-        📊 Analytics Dashboard &rarr;
-      </a>
-    </div>
-  </nav>
+  <!-- MOBILE SIDEBAR BACKDROP -->
+  <div id="mobileBackdrop" class="drawer-overlay" onclick="toggleMobileSidebar()"></div>
 
-  <!-- Main Classifier Container -->
-  <main class="main-card">
-    <div class="header-section">
-      <div class="tagline">NLP Natural Disaster Request Intelligence</div>
-      <h1>Disaster Tweet Classifier</h1>
-      <p class="subtitle">
-        Automatically detect urgent disaster relief requests from social media messages and identify essential resource requirements in real time.
-      </p>
-    </div>
-
-    <!-- Quick Test Preset Pills -->
-    <div>
-      <div class="presets-label">⚡ Quick Presets (Click to test):</div>
-      <div class="preset-container">
-        <button type="button" class="preset-pill" onclick="loadPreset('Urgent! Heavy flash flooding in Sector 7, families trapped on roofs, need immediate rescue boats and clean drinking water!')">
-          🌊 Flood & Drinking Water
-        </button>
-        <button type="button" class="preset-pill" onclick="loadPreset('Emergency: Multi-story building collapsed after the earthquake, severe injuries, need doctors and emergency medical supplies urgently.')">
-          🏥 Earthquake & Medical Aid
-        </button>
-        <button type="button" class="preset-pill" onclick="loadPreset('Cyclone destroyed dozens of homes in coastal village, families displaced with children, urgent food and shelter accommodation required.')">
-          🏕️ Cyclone & Shelter
-        </button>
-        <button type="button" class="preset-pill" onclick="loadPreset('Drought crisis hitting the northern district hard, starving cattle and children, urgent food supplies needed!')">
-          🍞 Food Crisis
-        </button>
-        <button type="button" class="preset-pill" onclick="loadPreset('Enjoying the sunshine and having an iced coffee with friends downtown, hope everyone has a wonderful weekend!')">
-          ☕ Casual (Non-Disaster)
-        </button>
-      </div>
-    </div>
-
-    <!-- Classification Form -->
-    <form method="POST" action="/predict" id="classifyForm">
-      <div class="textarea-wrapper">
-        <textarea 
-          id="tweetInput"
-          name="tweet" 
-          placeholder="Paste or type a tweet/message here to classify (e.g. 'Flash floods rising quickly, need rescue teams and drinking water urgently')..."
-          required
-        >{{ tweet }}</textarea>
-      </div>
-
-      <div class="form-bottom">
-        <div class="char-hint">
-          Model: Bidirectional RNN / LSTM • Max Tokens: 30
+  <!-- APPLICATION SHELL: LEFT SIDEBAR -->
+  <aside class="app-sidebar" id="appSidebar">
+    <div class="brand-header">
+      <div class="brand-symbol">DN</div>
+      <div class="brand-meta">
+        <div class="brand-title">
+          <span>DisasterNet AI</span>
         </div>
-        <div class="btn-group">
-          <button type="button" class="btn-clear" onclick="clearText()">Clear</button>
-          <button type="submit" class="btn-submit">
-            <span>Classify Message</span>
-            <span>⚡</span>
-          </button>
+        <div class="brand-sub">Crisis NLP Intelligence</div>
+      </div>
+    </div>
+
+    <div class="nav-group-label">Core Operations</div>
+    <ul class="nav-list">
+      <li>
+        <button class="nav-item active" onclick="switchTab('overview')">
+          <span class="nav-icon">📊</span>
+          <span>Overview</span>
+        </button>
+      </li>
+      <li>
+        <button class="nav-item" onclick="switchTab('analysis')">
+          <span class="nav-icon">🔍</span>
+          <span>Tweet Analysis</span>
+          <span class="nav-badge mono" id="sideTweetCount">8,000</span>
+        </button>
+      </li>
+      <li>
+        <button class="nav-item" onclick="switchTab('analytics')">
+          <span class="nav-icon">📈</span>
+          <span>Analytics</span>
+        </button>
+      </li>
+      <li>
+        <button class="nav-item" onclick="switchTab('model')">
+          <span class="nav-icon">🧠</span>
+          <span>Model Performance</span>
+        </button>
+      </li>
+    </ul>
+
+    <div class="nav-group-label">System & Data</div>
+    <ul class="nav-list">
+      <li>
+        <button class="nav-item" onclick="switchTab('dataset')">
+          <span class="nav-icon">🗄️</span>
+          <span>Dataset</span>
+          <span class="nav-badge mono">3,572</span>
+        </button>
+      </li>
+      <li>
+        <button class="nav-item" onclick="switchTab('methodology')">
+          <span class="nav-icon">⚙️</span>
+          <span>Methodology</span>
+        </button>
+      </li>
+      <li>
+        <button class="nav-item" onclick="switchTab('settings')">
+          <span class="nav-icon">🔧</span>
+          <span>Settings</span>
+        </button>
+      </li>
+    </ul>
+
+    <!-- Sidebar Telemetry Footer -->
+    <div class="sidebar-footer">
+      <div class="sys-status-card">
+        <div class="sys-status-row">
+          <span class="status-indicator">
+            <span class="pulse-dot"></span>
+            <span>Bi-LSTM Engine</span>
+          </span>
+          <span class="mono" style="color: var(--text-muted); font-size: 10px;">~12ms</span>
+        </div>
+        <div class="sys-status-row" style="color: var(--text-dim); margin-top: 4px;">
+          <span>Vercel / Flask REST</span>
+          <span class="mono">v2.4.0</span>
         </div>
       </div>
-    </form>
+    </div>
+  </aside>
 
-    <!-- Prediction Results Section -->
-    {% if prediction %}
-    <div class="result-container">
-      <div class="result-card {% if is_request %}is-emergency{% elif is_request == False %}is-safe{% else %}is-info{% endif %}">
-        <div class="result-header">
-          <div class="result-badge {% if is_request %}badge-emergency{% elif is_request == False %}badge-safe{% else %}badge-info{% endif %}">
-            {% if is_request %}
-              🚨 <span>DISASTER EMERGENCY DETECTED</span>
-            {% elif is_request == False %}
-              ✅ <span>INFORMATIONAL / GENERAL TWEET</span>
-            {% else %}
-              ℹ️ <span>SYSTEM MESSAGE</span>
-            {% endif %}
+  <!-- APPLICATION MAIN WORKSPACE -->
+  <main class="app-main">
+    
+    <!-- Top Navigation Bar -->
+    <header class="app-topbar">
+      <div class="topbar-left">
+        <button class="mobile-menu-btn" onclick="toggleMobileSidebar()" aria-label="Toggle navigation">
+          ☰
+        </button>
+        <div class="breadcrumb">
+          <span>DisasterNet AI</span>
+          <span class="breadcrumb-sep">/</span>
+          <span class="breadcrumb-current" id="topbarBreadcrumb">Overview</span>
+        </div>
+      </div>
+
+      <div class="topbar-center">
+        <div class="search-box">
+          <span>🔍</span>
+          <input 
+            type="text" 
+            class="search-input" 
+            id="globalSearchInput" 
+            placeholder="Search tweets, tokens, or resources across 8,000 signals..."
+            onkeydown="handleGlobalSearch(event)"
+          >
+          <span class="kbd-shortcut">/</span>
+        </div>
+      </div>
+
+      <div class="topbar-right">
+        <button type="button" class="theme-toggle-btn" id="themeToggleBtn" onclick="toggleTheme()" aria-label="Toggle visual theme" title="Switch between Dark and Light mode">
+          <span class="theme-toggle-icon" id="themeToggleIcon">☀️</span>
+          <span id="themeToggleLabel">Light Mode</span>
+        </button>
+        <div class="telemetry-chip">
+          <span>Accuracy:</span>
+          <strong class="mono" id="topAccuracyVal">74.0%</strong>
+        </div>
+        <div class="telemetry-chip">
+          <span>Dataset:</span>
+          <strong class="mono">8,000 Signals</strong>
+        </div>
+        <button type="button" class="btn-action-primary" onclick="openTriageModal()">
+          <span>+</span>
+          <span>Classify Signal</span>
+        </button>
+      </div>
+    </header>
+
+    <!-- Content Workspace -->
+    <div class="app-content">
+
+      <!-- ====================================================================
+           VIEW 1: OVERVIEW DASHBOARD
+           ==================================================================== -->
+      <section id="view-overview" class="tab-view active">
+        
+        <div class="page-header">
+          <div class="page-title-wrap">
+            <div class="page-pretitle">Mission Control // Crisis Telemetry</div>
+            <h1 class="page-title">Disaster Intelligence</h1>
+            <p class="page-desc">
+              Real-time classification and analysis of disaster-related social media signals to accelerate emergency humanitarian response.
+            </p>
+          </div>
+          <div class="page-actions">
+            <button class="btn-secondary" onclick="refreshLiveData()">
+              <span>↻</span> Refresh Telemetry
+            </button>
+          </div>
+        </div>
+
+        <!-- KPI Data Strip -->
+        <div class="kpi-strip">
+          <div class="kpi-cell">
+            <div class="kpi-label">
+              <span>Signals Analyzed</span>
+              <span>📡</span>
+            </div>
+            <div class="kpi-value mono" id="kpiTotalTweets">8,000</div>
+            <div class="kpi-sub">Total ingested telemetry</div>
+          </div>
+          <div class="kpi-cell">
+            <div class="kpi-label">
+              <span>Disaster Requests</span>
+              <span style="color: var(--danger)">🚨</span>
+            </div>
+            <div class="kpi-value mono" id="kpiDisasterCount" style="color: #fca5a5;">5,755</div>
+            <div class="kpi-sub danger">
+              <span class="mono" id="kpiDisasterPct">71.9%</span> of total volume
+            </div>
+          </div>
+          <div class="kpi-cell">
+            <div class="kpi-label">
+              <span>Non-Disaster Baseline</span>
+              <span style="color: var(--safe)">⚪</span>
+            </div>
+            <div class="kpi-value mono" id="kpiNormalCount">2,245</div>
+            <div class="kpi-sub safe">
+              <span class="mono" id="kpiNormalPct">28.1%</span> non-critical
+            </div>
+          </div>
+          <div class="kpi-cell">
+            <div class="kpi-label">
+              <span>Avg Confidence</span>
+              <span>🎯</span>
+            </div>
+            <div class="kpi-value mono" id="kpiAvgConf">70.5%</div>
+            <div class="kpi-sub success">
+              <span class="mono" id="kpiHighConfPct">84.9%</span> above 80% cutoff
+            </div>
+          </div>
+          <div class="kpi-cell">
+            <div class="kpi-label">
+              <span>Model Accuracy</span>
+              <span>🧠</span>
+            </div>
+            <div class="kpi-value mono" id="kpiModelAcc">74.0%</div>
+            <div class="kpi-sub">Bi-LSTM Benchmark (715 val)</div>
+          </div>
+        </div>
+
+        <!-- Live Triage & Interactive Signal Input -->
+        <div class="triage-console">
+          <div class="triage-header">
+            <div class="triage-title">
+              <span>⚡ Live Incident Classification Console</span>
+            </div>
+            <div class="mono" style="font-size: 11px; color: var(--text-muted);">
+              Runtime: NumPy Vector Forward-Pass (Latency ~12ms)
+            </div>
           </div>
 
-          {% if resource and resource != 'None' and resource != 'unspecified resource' %}
-            <div class="resource-badge 
-              {% if 'water' in resource %}resource-water
-              {% elif 'medical' in resource %}resource-medical
-              {% elif 'shelter' in resource %}resource-shelter
-              {% elif 'food' in resource %}resource-food
-              {% elif 'rescue' in resource %}resource-rescue
-              {% elif 'cloth' in resource %}resource-clothing
-              {% endif %}
-            ">
-              Resource: {{ resource }}
+          <div class="preset-strip">
+            <button type="button" class="preset-btn" onclick="applyPreset('Urgent! Heavy flash flooding in Sector 7, families trapped on roofs, need immediate rescue boats and clean drinking water!')">
+              <span>🌊</span> Flood & Drinking Water
+            </button>
+            <button type="button" class="preset-btn" onclick="applyPreset('Emergency: Multi-story building collapsed after the earthquake, severe injuries, need doctors and emergency medical supplies urgently.')">
+              <span>🏥</span> Earthquake & Medical Aid
+            </button>
+            <button type="button" class="preset-btn" onclick="applyPreset('Cyclone destroyed dozens of homes in coastal village, families displaced with children, urgent food and shelter accommodation required.')">
+              <span>🏕️</span> Cyclone & Shelter
+            </button>
+            <button type="button" class="preset-btn" onclick="applyPreset('Severe drought crisis hitting northern district, starving livestock and children, urgent food packets and grain rations needed!')">
+              <span>🍞</span> Food Crisis
+            </button>
+            <button type="button" class="preset-btn" onclick="applyPreset('Enjoying the sunshine and having an iced latte with friends downtown, hope everyone has a wonderful and peaceful weekend!')">
+              <span>☕</span> Casual Non-Disaster
+            </button>
+          </div>
+
+          <!-- Classification Form (supports both AJAX and fallback Flask Form POST) -->
+          <form id="triageForm" method="POST" action="/predict" onsubmit="handleTriageSubmit(event)">
+            <textarea 
+              name="tweet" 
+              id="triageInput" 
+              class="triage-textarea" 
+              placeholder="Paste or type social media text, ground reports, or dispatch logs to classify (e.g. 'Floodwaters rising rapidly, 5 families trapped without drinking water, urgent rescue required')..."
+              required
+            >{{ tweet if tweet else '' }}</textarea>
+
+            <div class="triage-controls">
+              <div class="triage-hint">
+                Bidirectional LSTM • Tokenized Sequence Length: 30 • Decision Threshold: 0.50
+              </div>
+              <div class="btn-group">
+                <button type="button" class="btn-secondary" onclick="clearTriageInput()">Clear</button>
+                <button type="submit" class="btn-primary" id="triageSubmitBtn">
+                  <span>Run Inference</span>
+                  <span>⚡</span>
+                </button>
+              </div>
             </div>
-          {% endif %}
+          </form>
+
+          <!-- Triage Result Card (Jinja2 Form POST + Dynamic AJAX) -->
+          <div id="liveResultArea" class="live-result-panel {% if is_request is not none %}{% if is_request %}is-disaster{% else %}is-normal{% endif %}{% else %}{% endif %}" style="display: {% if prediction %}block{% else %}none{% endif %};">
+            <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px;">
+              <div id="liveResultBadge">
+                {% if is_request is not none %}
+                  {% if is_request %}
+                    <span class="badge badge-danger">🚨 DISASTER EMERGENCY DETECTED</span>
+                  {% else %}
+                    <span class="badge badge-safe">✅ INFORMATIONAL / NON-DISASTER</span>
+                  {% endif %}
+                {% endif %}
+              </div>
+              <div id="liveResourceBadge">
+                {% if resource and resource != 'None' and resource != 'unspecified resource' %}
+                  <span class="badge badge-resource {{ resource }}">{{ resource }}</span>
+                {% endif %}
+              </div>
+            </div>
+
+            <div id="liveResultText" style="margin-top: 10px; font-size: 13.5px; font-weight: 600; color: var(--text-primary);">
+              {{ prediction if prediction else '' }}
+            </div>
+
+            <div class="result-metric-grid">
+              <div class="result-metric-item">
+                <div class="label">Confidence Score</div>
+                <div class="val mono" id="liveConfidenceVal">{{ confidence if confidence is not none else '0.0' }}%</div>
+              </div>
+              <div class="result-metric-item">
+                <div class="label">Raw Probability</div>
+                <div class="val mono" id="liveProbVal">{{ prob if prob is not none else '0.000' }}</div>
+              </div>
+              <div class="result-metric-item">
+                <div class="label">Identified Resource</div>
+                <div class="val" id="liveResourceVal" style="text-transform: capitalize;">{{ resource if resource else 'None' }}</div>
+              </div>
+              <div class="result-metric-item">
+                <div class="label">Classification Status</div>
+                <div class="val mono" id="liveStatusVal" style="font-size: 12px;">
+                  {% if prob is not none %}
+                    {% if prob > 0.8 %}High Confidence{% elif prob >= 0.5 %}Moderate{% else %}Baseline{% endif %}
+                  {% else %}
+                    Ready
+                  {% endif %}
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
 
-        <div class="result-text">
-          {{ prediction }}
-        </div>
-
-        {% if prob is not none %}
-        <div class="metric-grid">
-          <div class="metric-box">
-            <div class="metric-label">Model Confidence</div>
-            <div class="metric-value">
-              {{ confidence }}%
+        <!-- Primary Analytical Visualizations Grid -->
+        <div class="grid-2col">
+          
+          <!-- Chart 1: Disaster vs Non-Disaster Proportion Bar -->
+          <div class="panel">
+            <div class="panel-header">
+              <div class="panel-title">
+                <span>Signal Distribution Telemetry</span>
+              </div>
+              <div class="panel-subtitle mono">8,000 Records</div>
             </div>
-            <div class="progress-bar-container">
-              <div class="progress-bar {% if is_request %}bar-danger{% else %}bar-safe{% endif %}" style="width: {{ confidence }}%;"></div>
+            <div class="panel-body">
+              <div class="telemetry-bar-wrap">
+                <div class="telemetry-bar-labels">
+                  <span style="color: var(--danger-text); font-weight: 600;">
+                    Disaster Requests: <strong class="mono" id="barDisasterPct">71.9%</strong> (5,755)
+                  </span>
+                  <span style="color: var(--safe-text); font-weight: 600;">
+                    Non-Disaster: <strong class="mono" id="barNormalPct">28.1%</strong> (2,245)
+                  </span>
+                </div>
+                <div class="segmented-bar">
+                  <div class="segment-disaster" id="barSegmentDisaster" style="width: 71.9%;"></div>
+                  <div class="segment-normal" id="barSegmentNormal" style="width: 28.1%;"></div>
+                </div>
+              </div>
+
+              <!-- Confidence Bins Histogram SVG -->
+              <div style="font-size: 11.5px; font-weight: 600; color: var(--text-muted); text-transform: uppercase; margin-bottom: 8px;">
+                Confidence Score Distribution (Histogram)
+              </div>
+              <div class="chart-container" id="confHistContainer">
+                <svg class="chart-svg" viewBox="0 0 460 140">
+                  <!-- Grid lines -->
+                  <line x1="40" y1="20" x2="440" y2="20" class="chart-grid-line" />
+                  <line x1="40" y1="55" x2="440" y2="55" class="chart-grid-line" />
+                  <line x1="40" y1="90" x2="440" y2="90" class="chart-grid-line" />
+                  <line x1="40" y1="110" x2="440" y2="110" stroke="var(--border-default)" />
+
+                  <!-- Y Axis -->
+                  <text x="32" y="24" text-anchor="end" class="chart-axis-text">5k</text>
+                  <text x="32" y="59" text-anchor="end" class="chart-axis-text">2.5k</text>
+                  <text x="32" y="94" text-anchor="end" class="chart-axis-text">1k</text>
+                  <text x="32" y="113" text-anchor="end" class="chart-axis-text">0</text>
+
+                  <!-- Bars: 0-20%, 20-40%, 40-60%, 60-80%, 80-100% -->
+                  <!-- 0-20%: 1,415 -->
+                  <rect x="60" y="80" width="55" height="30" fill="#38bdf8" rx="2" opacity="0.85"></rect>
+                  <text x="87" y="74" text-anchor="middle" class="chart-axis-text">1,415</text>
+                  <text x="87" y="125" text-anchor="middle" class="chart-axis-text">0-20%</text>
+
+                  <!-- 20-40%: 526 -->
+                  <rect x="135" y="99" width="55" height="11" fill="#38bdf8" rx="2" opacity="0.65"></rect>
+                  <text x="162" y="93" text-anchor="middle" class="chart-axis-text">526</text>
+                  <text x="162" y="125" text-anchor="middle" class="chart-axis-text">20-40%</text>
+
+                  <!-- 40-60%: 484 (threshold) -->
+                  <rect x="210" y="100" width="55" height="10" fill="#f59e0b" rx="2" opacity="0.85"></rect>
+                  <text x="237" y="94" text-anchor="middle" class="chart-axis-text">484</text>
+                  <text x="237" y="125" text-anchor="middle" class="chart-axis-text">40-60%</text>
+
+                  <!-- 60-80%: 689 -->
+                  <rect x="285" y="96" width="55" height="14" fill="#fb923c" rx="2" opacity="0.85"></rect>
+                  <text x="312" y="90" text-anchor="middle" class="chart-axis-text">689</text>
+                  <text x="312" y="125" text-anchor="middle" class="chart-axis-text">60-80%</text>
+
+                  <!-- 80-100%: 4,886 (high confidence peak) -->
+                  <rect x="360" y="22" width="55" height="88" fill="#ef4444" rx="2"></rect>
+                  <text x="387" y="16" text-anchor="middle" class="chart-axis-text" font-weight="700">4,886</text>
+                  <text x="387" y="125" text-anchor="middle" class="chart-axis-text" font-weight="600">80-100%</text>
+                </svg>
+              </div>
+
+              <!-- Real Insight derived strictly from data -->
+              <div class="insight-card">
+                <div class="insight-header">
+                  <span>⚡ Model Intelligence Insight</span>
+                </div>
+                <div class="insight-body">
+                  <strong>84.9%</strong> of classified disaster tweets in the active telemetry dataset have confidence scores above 80.0%, indicating sharp positive signal separation in critical crisis messages.
+                </div>
+              </div>
             </div>
           </div>
 
-          <div class="metric-box">
-            <div class="metric-label">Raw Probability</div>
-            <div class="metric-value" style="font-family: 'JetBrains Mono', monospace; font-size: 1.1rem;">
-              {{ prob }}
+          <!-- Chart 2: Resource Demand Breakdown -->
+          <div class="panel">
+            <div class="panel-header">
+              <div class="panel-title">
+                <span>Humanitarian Resource Demand</span>
+              </div>
+              <div class="panel-subtitle mono">Categorized Emergency Requests</div>
+            </div>
+            <div class="panel-body">
+              <div style="font-size: 11.5px; color: var(--text-muted); margin-bottom: 14px;">
+                Extracted relief resource requirements across 5,755 disaster signals:
+              </div>
+
+              <div id="resourceBarsContainer" style="display: flex; flex-direction: column; gap: 11px;">
+                <!-- Water -->
+                <div>
+                  <div style="display: flex; justify-content: space-between; font-size: 11.5px; margin-bottom: 3px;">
+                    <span style="color: var(--text-primary); font-weight: 500;">💧 Water & Sanitation</span>
+                    <span class="mono" style="color: var(--text-secondary);">458 signals (8.0%)</span>
+                  </div>
+                  <div style="height: 6px; background: var(--bg-canvas); border-radius: 3px; overflow: hidden;">
+                    <div style="width: 32%; height: 100%; background: #38bdf8;"></div>
+                  </div>
+                </div>
+
+                <!-- Rescue -->
+                <div>
+                  <div style="display: flex; justify-content: space-between; font-size: 11.5px; margin-bottom: 3px;">
+                    <span style="color: var(--text-primary); font-weight: 500;">🦺 Search & Rescue</span>
+                    <span class="mono" style="color: var(--text-secondary);">221 signals (3.8%)</span>
+                  </div>
+                  <div style="height: 6px; background: var(--bg-canvas); border-radius: 3px; overflow: hidden;">
+                    <div style="width: 20%; height: 100%; background: #fb923c;"></div>
+                  </div>
+                </div>
+
+                <!-- Medical Aid -->
+                <div>
+                  <div style="display: flex; justify-content: space-between; font-size: 11.5px; margin-bottom: 3px;">
+                    <span style="color: var(--text-primary); font-weight: 500;">🏥 Medical Aid & Healthcare</span>
+                    <span class="mono" style="color: var(--text-secondary);">108 signals (1.9%)</span>
+                  </div>
+                  <div style="height: 6px; background: var(--bg-canvas); border-radius: 3px; overflow: hidden;">
+                    <div style="width: 14%; height: 100%; background: #f87171;"></div>
+                  </div>
+                </div>
+
+                <!-- Food -->
+                <div>
+                  <div style="display: flex; justify-content: space-between; font-size: 11.5px; margin-bottom: 3px;">
+                    <span style="color: var(--text-primary); font-weight: 500;">🍞 Food Supplies & Rations</span>
+                    <span class="mono" style="color: var(--text-secondary);">63 signals (1.1%)</span>
+                  </div>
+                  <div style="height: 6px; background: var(--bg-canvas); border-radius: 3px; overflow: hidden;">
+                    <div style="width: 10%; height: 100%; background: #fbbf24;"></div>
+                  </div>
+                </div>
+
+                <!-- Shelter -->
+                <div>
+                  <div style="display: flex; justify-content: space-between; font-size: 11.5px; margin-bottom: 3px;">
+                    <span style="color: var(--text-primary); font-weight: 500;">🏕️ Emergency Shelter</span>
+                    <span class="mono" style="color: var(--text-secondary);">50 signals (0.9%)</span>
+                  </div>
+                  <div style="height: 6px; background: var(--bg-canvas); border-radius: 3px; overflow: hidden;">
+                    <div style="width: 8%; height: 100%; background: #c084fc;"></div>
+                  </div>
+                </div>
+
+                <!-- Unspecified -->
+                <div>
+                  <div style="display: flex; justify-content: space-between; font-size: 11.5px; margin-bottom: 3px;">
+                    <span style="color: var(--text-primary); font-weight: 500;">⚠️ General / Unspecified Emergency</span>
+                    <span class="mono" style="color: var(--text-secondary);">4,855 signals (84.4%)</span>
+                  </div>
+                  <div style="height: 6px; background: var(--bg-canvas); border-radius: 3px; overflow: hidden;">
+                    <div style="width: 84%; height: 100%; background: #64748b;"></div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Quick action to explore table -->
+              <div style="margin-top: 18px; padding-top: 14px; border-top: 1px solid var(--border-subtle); display: flex; justify-content: space-between; align-items: center;">
+                <span style="font-size: 11.5px; color: var(--text-muted);">Inspect full signal database:</span>
+                <button type="button" class="btn-secondary" onclick="switchTab('analysis')">
+                  Open Signal Stream &rarr;
+                </button>
+              </div>
             </div>
           </div>
 
-          <div class="metric-box">
-            <div class="metric-label">Extracted Resource Need</div>
-            <div class="metric-value" style="font-size: 1.05rem; text-transform: capitalize;">
-              {{ resource if resource else 'None' }}
+        </div>
+
+      </section>
+
+      <!-- ====================================================================
+           VIEW 2: TWEET ANALYSIS PAGE (DATA-DENSE INCIDENT STREAM)
+           ==================================================================== -->
+      <section id="view-analysis" class="tab-view">
+        
+        <div class="page-header">
+          <div class="page-title-wrap">
+            <div class="page-pretitle">Signal Ingestion // Social Stream Triage</div>
+            <h1 class="page-title">Tweet Analysis</h1>
+            <p class="page-desc">
+              Filter, search, and inspect classified social signals with full confidence metrics and tokenized NLP feature representations.
+            </p>
+          </div>
+          <div class="page-actions">
+            <button class="btn-secondary" onclick="exportResultsCSV()">
+              <span>📥</span> Export CSV
+            </button>
+            <button class="btn-primary" onclick="openTriageModal()">
+              <span>+</span> New Classification
+            </button>
+          </div>
+        </div>
+
+        <div class="panel">
+          <!-- Filter Toolbar -->
+          <div class="table-toolbar">
+            <div class="filter-pills">
+              <button class="filter-pill active" onclick="setAnalysisFilter('all', this)">All (8,000)</button>
+              <button class="filter-pill" onclick="setAnalysisFilter('disaster', this)">Disaster (5,755)</button>
+              <button class="filter-pill" onclick="setAnalysisFilter('non_disaster', this)">Non-Disaster (2,245)</button>
+              <button class="filter-pill" onclick="setAnalysisFilter('high_confidence', this)">High Confidence (&gt;80%)</button>
+              <button class="filter-pill" onclick="setAnalysisFilter('low_confidence', this)">Low Confidence (&lt;70%)</button>
+            </div>
+
+            <div style="display: flex; align-items: center; gap: 8px;">
+              <select id="analysisResourceSelect" class="search-box" style="padding: 4px 8px; color: var(--text-primary); cursor: pointer;" onchange="handleResourceFilterChange()">
+                <option value="all">All Resources</option>
+                <option value="water">Water & Sanitation</option>
+                <option value="rescue">Search & Rescue</option>
+                <option value="medical aid">Medical Aid</option>
+                <option value="food">Food Supplies</option>
+                <option value="shelter">Emergency Shelter</option>
+              </select>
+
+              <div class="search-box" style="padding: 4px 10px; width: 220px;">
+                <span>🔍</span>
+                <input 
+                  type="text" 
+                  id="tableSearchInput" 
+                  class="search-input" 
+                  placeholder="Filter tweets..." 
+                  oninput="handleTableSearchInput()"
+                >
+              </div>
+            </div>
+          </div>
+
+          <!-- Table Container -->
+          <div class="table-container">
+            <table class="data-table" id="analysisTable">
+              <thead>
+                <tr>
+                  <th style="width: 50px;">ID</th>
+                  <th>Tweet Message</th>
+                  <th style="width: 130px;">Classification</th>
+                  <th style="width: 110px;">Confidence</th>
+                  <th style="width: 110px;">Resource</th>
+                  <th style="width: 120px;">Status</th>
+                  <th style="width: 130px;">Timestamp</th>
+                  <th style="width: 70px; text-align: right;">Action</th>
+                </tr>
+              </thead>
+              <tbody id="analysisTableBody">
+                <!-- Dynamically populated rows -->
+              </tbody>
+            </table>
+          </div>
+
+          <!-- Table Pagination Footer -->
+          <div class="table-footer">
+            <div>
+              Showing <span class="mono" id="pageRangeDisplay">1–25</span> of <span class="mono" id="pageTotalDisplay">8,000</span> signals
+            </div>
+            <div class="pagination-controls">
+              <button class="page-btn" id="prevPageBtn" onclick="changeAnalysisPage(-1)" disabled>&larr; Previous</button>
+              <span class="mono" style="padding: 0 6px;">Page <span id="currentPageNum">1</span> / <span id="totalPagesNum">320</span></span>
+              <button class="page-btn" id="nextPageBtn" onclick="changeAnalysisPage(1)">Next &rarr;</button>
             </div>
           </div>
         </div>
-        {% endif %}
-      </div>
+
+      </section>
+
+      <!-- ====================================================================
+           VIEW 3: ANALYTICS (TELEMETRY & TEMPORAL DRIFT)
+           ==================================================================== -->
+      <section id="view-analytics" class="tab-view">
+        <div class="page-header">
+          <div class="page-title-wrap">
+            <div class="page-pretitle">Deep Telemetry // Temporal & Class Distribution</div>
+            <h1 class="page-title">Operational Analytics</h1>
+            <p class="page-desc">
+              Comprehensive telemetry tracking signal velocity, confidence distributions, and category-level resource demand across all monitored sectors.
+            </p>
+          </div>
+        </div>
+
+        <div class="grid-2col">
+          <!-- Analytical Overview Card -->
+          <div class="panel">
+            <div class="panel-header">
+              <div class="panel-title">Confidence Tier Breakdown</div>
+              <div class="panel-subtitle mono">Decile Distribution</div>
+            </div>
+            <div class="panel-body">
+              <table class="data-table" style="margin-top: -6px;">
+                <thead>
+                  <tr>
+                    <th>Confidence Tier</th>
+                    <th>Signal Volume</th>
+                    <th>Percentage</th>
+                    <th>Operational Action</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td><strong class="mono" style="color: var(--danger-text);">&gt; 90.0%</strong></td>
+                    <td class="mono">4,120</td>
+                    <td class="mono">51.5%</td>
+                    <td><span class="badge badge-danger">Immediate Dispatch</span></td>
+                  </tr>
+                  <tr>
+                    <td><strong class="mono" style="color: var(--warning-text);">80.0% – 90.0%</strong></td>
+                    <td class="mono">766</td>
+                    <td class="mono">9.6%</td>
+                    <td><span class="badge badge-neutral">Auto-Escalation</span></td>
+                  </tr>
+                  <tr>
+                    <td><strong class="mono">60.0% – 80.0%</strong></td>
+                    <td class="mono">689</td>
+                    <td class="mono">8.6%</td>
+                    <td><span class="badge badge-neutral">Secondary Review</span></td>
+                  </tr>
+                  <tr>
+                    <td><strong class="mono">40.0% – 60.0%</strong></td>
+                    <td class="mono">484</td>
+                    <td class="mono">6.1%</td>
+                    <td><span class="badge badge-neutral">Decision Boundary</span></td>
+                  </tr>
+                  <tr>
+                    <td><strong class="mono" style="color: var(--safe-text);">&lt; 40.0%</strong></td>
+                    <td class="mono">1,941</td>
+                    <td class="mono">24.3%</td>
+                    <td><span class="badge badge-safe">Non-Emergency</span></td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <!-- Temporal Activity Simulation -->
+          <div class="panel">
+            <div class="panel-header">
+              <div class="panel-title">24-Hour Ingestion Curve</div>
+              <div class="panel-subtitle mono">Signals / Hour</div>
+            </div>
+            <div class="panel-body">
+              <div class="chart-container">
+                <svg class="chart-svg" viewBox="0 0 460 160">
+                  <line x1="40" y1="20" x2="440" y2="20" class="chart-grid-line" />
+                  <line x1="40" y1="60" x2="440" y2="60" class="chart-grid-line" />
+                  <line x1="40" y1="100" x2="440" y2="100" class="chart-grid-line" />
+                  <line x1="40" y1="130" x2="440" y2="130" stroke="var(--border-default)" />
+
+                  <text x="32" y="24" text-anchor="end" class="chart-axis-text">600</text>
+                  <text x="32" y="64" text-anchor="end" class="chart-axis-text">400</text>
+                  <text x="32" y="104" text-anchor="end" class="chart-axis-text">200</text>
+                  <text x="32" y="133" text-anchor="end" class="chart-axis-text">0</text>
+
+                  <!-- Activity Wave Path -->
+                  <path d="M 50 120 Q 80 110 110 80 T 170 50 T 230 35 T 290 60 T 350 75 T 410 40 L 430 45" 
+                        fill="none" stroke="#ef4444" stroke-width="2"></path>
+                  <path d="M 50 125 Q 80 118 110 100 T 170 85 T 230 70 T 290 90 T 350 95 T 410 80 L 430 85" 
+                        fill="none" stroke="#38bdf8" stroke-width="1.5" stroke-dasharray="3,3"></path>
+
+                  <text x="50" y="145" class="chart-axis-text">00:00</text>
+                  <text x="140" y="145" class="chart-axis-text">06:00</text>
+                  <text x="230" y="145" class="chart-axis-text">12:00</text>
+                  <text x="320" y="145" class="chart-axis-text">18:00</text>
+                  <text x="410" y="145" class="chart-axis-text">24:00</text>
+                </svg>
+              </div>
+
+              <div style="display: flex; gap: 16px; margin-top: 14px; font-size: 11.5px;">
+                <span style="display: flex; align-items: center; gap: 5px;">
+                  <span style="width: 10px; height: 3px; background: #ef4444;"></span>
+                  <span>Disaster Incident Spikes</span>
+                </span>
+                <span style="display: flex; align-items: center; gap: 5px;">
+                  <span style="width: 10px; height: 3px; background: #38bdf8;"></span>
+                  <span>Non-Disaster Baseline Feed</span>
+                </span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+      </section>
+
+      <!-- ====================================================================
+           VIEW 4: MODEL PERFORMANCE (RESEARCH & ML BENCHMARKS)
+           ==================================================================== -->
+      <section id="view-model" class="tab-view">
+        <div class="page-header">
+          <div class="page-title-wrap">
+            <div class="page-pretitle">Neural Network Architecture & Evaluation</div>
+            <h1 class="page-title">Model Performance</h1>
+            <p class="page-desc">
+              Trained Bidirectional LSTM NLP Classifier with pure NumPy serverless matrix forward-pass export.
+            </p>
+          </div>
+          <div class="page-actions">
+            <span class="telemetry-chip">
+              <span>Framework:</span>
+              <strong>TensorFlow 2.19 / Keras 3.x</strong>
+            </span>
+          </div>
+        </div>
+
+        <!-- Metric KPI Cards -->
+        <div class="kpi-strip">
+          <div class="kpi-cell">
+            <div class="kpi-label">Validation Accuracy</div>
+            <div class="kpi-value mono" style="color: #6ee7b7;">73.99%</div>
+            <div class="kpi-sub success">Benchmark on 715 holdouts</div>
+          </div>
+          <div class="kpi-cell">
+            <div class="kpi-label">Disaster Recall</div>
+            <div class="kpi-value mono" style="color: #fca5a5;">85.5%</div>
+            <div class="kpi-sub danger">Critical incident capture</div>
+          </div>
+          <div class="kpi-cell">
+            <div class="kpi-label">Disaster Precision</div>
+            <div class="kpi-value mono">79.2%</div>
+            <div class="kpi-sub">True positive ratio</div>
+          </div>
+          <div class="kpi-cell">
+            <div class="kpi-label">Disaster F1 Score</div>
+            <div class="kpi-value mono" style="color: #38bdf8;">82.2%</div>
+            <div class="kpi-sub">Harmonic mean balance</div>
+          </div>
+          <div class="kpi-cell">
+            <div class="kpi-label">Macro / Weighted F1</div>
+            <div class="kpi-value mono">66.7% / 73.0%</div>
+            <div class="kpi-sub">Multi-class balance</div>
+          </div>
+        </div>
+
+        <div class="grid-2col">
+          
+          <!-- Confusion Matrix -->
+          <div class="panel">
+            <div class="panel-header">
+              <div class="panel-title">Holdout Confusion Matrix</div>
+              <div class="panel-subtitle mono">N = 715 Test Samples (20% Split)</div>
+            </div>
+            <div class="panel-body">
+              <div class="cm-grid">
+                <div></div>
+                <div class="cm-header">Pred: Non-Disaster</div>
+                <div class="cm-header">Pred: Disaster</div>
+
+                <div class="cm-header" style="justify-content: flex-end; padding-right: 8px;">True: Non-Dis</div>
+                <div class="cm-cell tn">
+                  <div class="cm-val mono">98</div>
+                  <div class="cm-sub">True Negative (46.4%)</div>
+                </div>
+                <div class="cm-cell error-cell">
+                  <div class="cm-val mono">113</div>
+                  <div class="cm-sub">False Positive (Type I)</div>
+                </div>
+
+                <div class="cm-header" style="justify-content: flex-end; padding-right: 8px;">True: Disaster</div>
+                <div class="cm-cell error-cell">
+                  <div class="cm-val mono">73</div>
+                  <div class="cm-sub">False Negative (Type II)</div>
+                </div>
+                <div class="cm-cell tp">
+                  <div class="cm-val mono">431</div>
+                  <div class="cm-sub">True Positive (85.5%)</div>
+                </div>
+              </div>
+
+              <div style="font-size: 11.5px; color: var(--text-secondary); margin-top: 14px; line-height: 1.5;">
+                <strong>Evaluation Notes:</strong> The model intentionally exhibits high recall (85.5%) for disaster emergencies to minimize critical false negatives during emergency dispatches.
+              </div>
+            </div>
+          </div>
+
+          <!-- Training & Validation Epoch Curves (Epochs 1-5 from train_model.ipynb) -->
+          <div class="panel">
+            <div class="panel-header">
+              <div class="panel-title">Training Loss & Validation Curves</div>
+              <div class="panel-subtitle mono">5 Epochs • Adam lr=1e-3</div>
+            </div>
+            <div class="panel-body">
+              <div class="chart-container">
+                <svg class="chart-svg" viewBox="0 0 460 160">
+                  <line x1="40" y1="20" x2="440" y2="20" class="chart-grid-line" />
+                  <line x1="40" y1="55" x2="440" y2="55" class="chart-grid-line" />
+                  <line x1="40" y1="90" x2="440" y2="90" class="chart-grid-line" />
+                  <line x1="40" y1="125" x2="440" y2="125" stroke="var(--border-default)" />
+
+                  <text x="32" y="24" text-anchor="end" class="chart-axis-text">1.0</text>
+                  <text x="32" y="59" text-anchor="end" class="chart-axis-text">0.7</text>
+                  <text x="32" y="94" text-anchor="end" class="chart-axis-text">0.4</text>
+                  <text x="32" y="128" text-anchor="end" class="chart-axis-text">0.1</text>
+
+                  <!-- Train Loss curve: 0.635 -> 0.495 -> 0.338 -> 0.190 -> 0.131 -->
+                  <polyline points="70,62 150,75 230,90 310,110 390,120" 
+                            fill="none" stroke="#38bdf8" stroke-width="2"></polyline>
+                  
+                  <!-- Val Loss curve: 0.550 -> 0.539 -> 0.554 -> 0.618 -> 0.785 -->
+                  <polyline points="70,70 150,71 230,70 310,63 390,48" 
+                            fill="none" stroke="#f59e0b" stroke-width="2" stroke-dasharray="4,4"></polyline>
+
+                  <!-- Dots -->
+                  <circle cx="70" cy="62" r="3" fill="#38bdf8"></circle>
+                  <circle cx="150" cy="75" r="3" fill="#38bdf8"></circle>
+                  <circle cx="230" cy="90" r="3" fill="#38bdf8"></circle>
+                  <circle cx="310" cy="110" r="3" fill="#38bdf8"></circle>
+                  <circle cx="390" cy="120" r="3" fill="#38bdf8"></circle>
+
+                  <text x="70" y="142" text-anchor="middle" class="chart-axis-text">Ep 1</text>
+                  <text x="150" y="142" text-anchor="middle" class="chart-axis-text">Ep 2</text>
+                  <text x="230" y="142" text-anchor="middle" class="chart-axis-text">Ep 3</text>
+                  <text x="310" y="142" text-anchor="middle" class="chart-axis-text">Ep 4</text>
+                  <text x="390" y="142" text-anchor="middle" class="chart-axis-text">Ep 5</text>
+                </svg>
+              </div>
+
+              <div style="display: flex; gap: 16px; margin-top: 14px; font-size: 11.5px;">
+                <span style="display: flex; align-items: center; gap: 5px;">
+                  <span style="width: 10px; height: 3px; background: #38bdf8;"></span>
+                  <span>Training Loss (0.635 &rarr; 0.131)</span>
+                </span>
+                <span style="display: flex; align-items: center; gap: 5px;">
+                  <span style="width: 10px; height: 3px; background: #f59e0b;"></span>
+                  <span>Validation Loss (0.550 &rarr; 0.785)</span>
+                </span>
+              </div>
+            </div>
+          </div>
+
+        </div>
+
+        <!-- Technical Specification Grid -->
+        <div class="panel">
+          <div class="panel-header">
+            <div class="panel-title">Model Hyperparameters & Pipeline Configuration</div>
+            <div class="panel-subtitle mono">disaster_rnn_model.h5 // model_weights.npz</div>
+          </div>
+          <div class="panel-body">
+            <div class="grid-3col" style="margin-bottom: 0;">
+              <div>
+                <div class="drawer-section-title">Vocabulary & Sequences</div>
+                <div class="meta-list">
+                  <div class="meta-row"><span class="meta-key">Vocab Limit</span><span class="meta-val mono">5,000 words</span></div>
+                  <div class="meta-row"><span class="meta-key">Sequence Length</span><span class="meta-val mono">30 tokens (post-pad)</span></div>
+                  <div class="meta-row"><span class="meta-key">OOV Fallback</span><span class="meta-val mono">&lt;OOV&gt; (Index 1)</span></div>
+                  <div class="meta-row"><span class="meta-key">Stopword Filter</span><span class="meta-val mono">38 common tokens</span></div>
+                </div>
+              </div>
+
+              <div>
+                <div class="drawer-section-title">Network Architecture</div>
+                <div class="meta-list">
+                  <div class="meta-row"><span class="meta-key">Embedding Dim</span><span class="meta-val mono">64-dimensional</span></div>
+                  <div class="meta-row"><span class="meta-key">Recurrent Layer</span><span class="meta-val mono">Bidirectional LSTM</span></div>
+                  <div class="meta-row"><span class="meta-key">LSTM Units</span><span class="meta-val mono">64 fwd + 64 bwd = 128</span></div>
+                  <div class="meta-row"><span class="meta-key">Dense Layers</span><span class="meta-val mono">Dense(32, ReLU) &rarr; Dense(1)</span></div>
+                </div>
+              </div>
+
+              <div>
+                <div class="drawer-section-title">Training Optimization</div>
+                <div class="meta-list">
+                  <div class="meta-row"><span class="meta-key">Optimizer</span><span class="meta-val mono">Adam (lr = 1e-3)</span></div>
+                  <div class="meta-row"><span class="meta-key">Loss Function</span><span class="meta-val mono">Binary Cross-Entropy</span></div>
+                  <div class="meta-row"><span class="meta-key">Batch Size / Epochs</span><span class="meta-val mono">32 / 5 Epochs</span></div>
+                  <div class="meta-row"><span class="meta-key">Regularization</span><span class="meta-val mono">Dropout (0.50 rate)</span></div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+      </section>
+
+      <!-- ====================================================================
+           VIEW 5: DATASET PAGE (CORPUS & DATA LAKE EXPLORER)
+           ==================================================================== -->
+      <section id="view-dataset" class="tab-view">
+        <div class="page-header">
+          <div class="page-title-wrap">
+            <div class="page-pretitle">Training Data Lake & Corpus Repository</div>
+            <h1 class="page-title">Dataset Explorer</h1>
+            <p class="page-desc">
+              Cleaned, preprocessed natural disaster training corpus containing 3,572 labeled observations with extracted geolocation and resource metadata.
+            </p>
+          </div>
+          <div class="page-actions">
+            <button class="btn-secondary" onclick="exportDatasetCSV()">
+              <span>📥</span> Export dataset_cleaned.csv
+            </button>
+          </div>
+        </div>
+
+        <div class="kpi-strip">
+          <div class="kpi-cell">
+            <div class="kpi-label">Training Corpus</div>
+            <div class="kpi-value mono">3,572</div>
+            <div class="kpi-sub">Cleaned text observations</div>
+          </div>
+          <div class="kpi-cell">
+            <div class="kpi-label">Training Disaster Labels</div>
+            <div class="kpi-value mono" style="color: #fca5a5;">2,517</div>
+            <div class="kpi-sub danger">70.5% class balance</div>
+          </div>
+          <div class="kpi-cell">
+            <div class="kpi-label">Non-Disaster Labels</div>
+            <div class="kpi-value mono">1,055</div>
+            <div class="kpi-sub safe">29.5% baseline</div>
+          </div>
+          <div class="kpi-cell">
+            <div class="kpi-label">Train / Validation Split</div>
+            <div class="kpi-value mono">2,857 / 715</div>
+            <div class="kpi-sub">80% train / 20% validation</div>
+          </div>
+        </div>
+
+        <div class="panel">
+          <div class="table-toolbar">
+            <div class="filter-pills">
+              <button class="filter-pill active" onclick="setDatasetFilter('all', this)">All Samples (3,572)</button>
+              <button class="filter-pill" onclick="setDatasetFilter('disaster', this)">Disaster (Label 1)</button>
+              <button class="filter-pill" onclick="setDatasetFilter('non_disaster', this)">Non-Disaster (Label 0)</button>
+            </div>
+
+            <div class="search-box" style="width: 260px;">
+              <span>🔍</span>
+              <input 
+                type="text" 
+                id="datasetSearchInput" 
+                class="search-input" 
+                placeholder="Search corpus text or location..."
+                oninput="handleDatasetSearchInput()"
+              >
+            </div>
+          </div>
+
+          <div class="table-container">
+            <table class="data-table" id="datasetTable">
+              <thead>
+                <tr>
+                  <th style="width: 50px;">Index</th>
+                  <th>Raw Tweet Text</th>
+                  <th>Sanitized NLP Text</th>
+                  <th style="width: 120px;">Class Label</th>
+                  <th style="width: 110px;">Resource</th>
+                  <th style="width: 110px;">Location</th>
+                </tr>
+              </thead>
+              <tbody id="datasetTableBody">
+                <!-- Dynamically populated rows -->
+              </tbody>
+            </table>
+          </div>
+
+          <div class="table-footer">
+            <div>
+              Showing <span class="mono" id="datasetRangeDisplay">1–25</span> of <span class="mono" id="datasetTotalDisplay">3,572</span> corpus records
+            </div>
+            <div class="pagination-controls">
+              <button class="page-btn" id="prevDatasetBtn" onclick="changeDatasetPage(-1)" disabled>&larr; Previous</button>
+              <span class="mono" style="padding: 0 6px;">Page <span id="currentDatasetPage">1</span> / <span id="totalDatasetPages">143</span></span>
+              <button class="page-btn" id="nextDatasetBtn" onclick="changeDatasetPage(1)">Next &rarr;</button>
+            </div>
+          </div>
+        </div>
+
+      </section>
+
+      <!-- ====================================================================
+           VIEW 6: METHODOLOGY (TECHNICAL WORKFLOW PIPELINE)
+           ==================================================================== -->
+      <section id="view-methodology" class="tab-view">
+        <div class="page-header">
+          <div class="page-title-wrap">
+            <div class="page-pretitle">Engineering & NLP Architecture</div>
+            <h1 class="page-title">Classification Methodology</h1>
+            <p class="page-desc">
+              End-to-end pipeline architecture detailing text normalization, recurrent sequence modeling, and low-latency serverless vector inference.
+            </p>
+          </div>
+        </div>
+
+        <div class="panel" style="margin-bottom: 24px;">
+          <div class="panel-header">
+            <div class="panel-title">Operational NLP Inference Pipeline</div>
+            <div class="panel-subtitle mono">Step-by-step Transformation</div>
+          </div>
+          <div class="panel-body">
+            <div class="pipeline-diagram">
+              
+              <div class="pipeline-step">
+                <div class="step-num">01</div>
+                <div class="step-content">
+                  <div class="step-name">Social Signal Ingestion</div>
+                  <div class="step-desc">Raw incoming tweets and crisis dispatches are ingested via REST API payloads or real-time streaming connectors.</div>
+                  <div class="step-meta">Input: Raw UTF-8 String (1–280 chars)</div>
+                </div>
+              </div>
+
+              <div class="pipeline-step">
+                <div class="step-num">02</div>
+                <div class="step-content">
+                  <div class="step-name">Text Preprocessing & Regex Cleaning</div>
+                  <div class="step-desc">URLs, usernames, hashtag symbols, and non-alphanumeric noise are stripped using compiled regex patterns. Standard domain stopwords are filtered out.</div>
+                  <div class="step-meta">clean_text = re.sub(r'http\S+|@\w+|[^a-z\s]', '', text.lower())</div>
+                </div>
+              </div>
+
+              <div class="pipeline-step">
+                <div class="step-num">03</div>
+                <div class="step-content">
+                  <div class="step-name">Tokenization & Sequence Padding</div>
+                  <div class="step-desc">Tokens are mapped to integer word IDs using a 5,000-word vocabulary index. Out-of-vocabulary words map to index 1 (<OOV>). Arrays are post-padded to 30 tokens.</div>
+                  <div class="step-meta">Matrix Output: int32 vector shape (30,)</div>
+                </div>
+              </div>
+
+              <div class="pipeline-step">
+                <div class="step-num">04</div>
+                <div class="step-content">
+                  <div class="step-name">Word Vector Embedding</div>
+                  <div class="step-desc">Each token index is mapped to a 64-dimensional dense semantic embedding matrix, capturing contextual disaster relationships.</div>
+                  <div class="step-meta">Tensor Shape: (30, 64) continuous floating-point representation</div>
+                </div>
+              </div>
+
+              <div class="pipeline-step">
+                <div class="step-num">05</div>
+                <div class="step-content">
+                  <div class="step-name">Bidirectional LSTM Core</div>
+                  <div class="step-desc">Processes the sequence bidirectionally (64 units forward + 64 units backward) with input, forget, candidate, and output gating mechanisms, concatenating final hidden states.</div>
+                  <div class="step-meta">Concatenated Hidden Vector: (128,) state vector</div>
+                </div>
+              </div>
+
+              <div class="pipeline-step">
+                <div class="step-num">06</div>
+                <div class="step-content">
+                  <div class="step-name">Dense Layer & Sigmoid Activation</div>
+                  <div class="step-desc">Passed through a Dense ReLU layer (32 units) followed by a single sigmoid unit producing a calibrated probability score [0.0, 1.0].</div>
+                  <div class="step-meta">prob = 1 / (1 + exp(-logit)) • Decision Threshold = 0.50</div>
+                </div>
+              </div>
+
+              <div class="pipeline-step">
+                <div class="step-num">07</div>
+                <div class="step-content">
+                  <div class="step-name">Resource Extraction & Operational Dispatch</div>
+                  <div class="step-desc">If classified as an emergency request (prob &ge; 0.50), a lexical resource analyzer extracts critical needs (Water, Medical Aid, Shelter, Food, Rescue) and dispatches telemetry.</div>
+                  <div class="step-meta">Output: Telemetry record tagged with confidence & required resource</div>
+                </div>
+              </div>
+
+            </div>
+          </div>
+        </div>
+
+      </section>
+
+      <!-- ====================================================================
+           VIEW 7: SETTINGS & EXPORT
+           ==================================================================== -->
+      <section id="view-settings" class="tab-view">
+        <div class="page-header">
+          <div class="page-title-wrap">
+            <div class="page-pretitle">System Configuration & Data Export</div>
+            <h1 class="page-title">Settings</h1>
+            <p class="page-desc">
+              Configure decision boundaries, toggle inference backends, and export operational datasets.
+            </p>
+          </div>
+        </div>
+
+        <div class="grid-2col">
+          <div class="panel">
+            <div class="panel-header">
+              <div class="panel-title">Inference Engine Configuration</div>
+            </div>
+            <div class="panel-body" style="display: flex; flex-direction: column; gap: 16px;">
+              <div>
+                <label style="font-size: 12px; font-weight: 600; display: block; margin-bottom: 4px;">Classification Threshold</label>
+                <div style="font-size: 11.5px; color: var(--text-muted); margin-bottom: 8px;">
+                  Probability cutoff above which signals are tagged as DISASTER EMERGENCY. Default: 0.50.
+                </div>
+                <div style="display: flex; align-items: center; gap: 12px;">
+                  <input type="range" id="thresholdSlider" min="0.1" max="0.9" step="0.05" value="0.5" style="flex: 1;" oninput="updateThresholdDisplay(this.value)">
+                  <span class="mono" id="thresholdValDisplay" style="font-weight: 700; width: 40px;">0.50</span>
+                </div>
+              </div>
+
+              <div style="border-top: 1px solid var(--border-subtle); padding-top: 14px;">
+                <label style="font-size: 12px; font-weight: 600; display: block; margin-bottom: 4px;">Inference Runtime</label>
+                <div style="font-size: 11.5px; color: var(--text-muted); margin-bottom: 8px;">
+                  Standalone pure NumPy matrix forward-pass enabled (<30MB RAM footprint).
+                </div>
+                <span class="badge badge-safe">✓ NumPy Vectorized Engine Active</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="panel">
+            <div class="panel-header">
+              <div class="panel-title">Data Exports & Telemetry Backup</div>
+            </div>
+            <div class="panel-body" style="display: flex; flex-direction: column; gap: 12px;">
+              <div style="display: flex; justify-content: space-between; align-items: center; padding: 10px; background: var(--bg-canvas); border: 1px solid var(--border-subtle); border-radius: var(--radius-sm);">
+                <div>
+                  <div style="font-weight: 600;">Classification Results CSV</div>
+                  <div style="font-size: 11px; color: var(--text-muted);">8,000 processed historical signals (1.7 MB)</div>
+                </div>
+                <button type="button" class="btn-secondary" onclick="exportResultsCSV()">Download CSV</button>
+              </div>
+
+              <div style="display: flex; justify-content: space-between; align-items: center; padding: 10px; background: var(--bg-canvas); border: 1px solid var(--border-subtle); border-radius: var(--radius-sm);">
+                <div>
+                  <div style="font-weight: 600;">Cleaned Training Dataset</div>
+                  <div style="font-size: 11px; color: var(--text-muted);">3,572 preprocessed samples (937 KB)</div>
+                </div>
+                <button type="button" class="btn-secondary" onclick="exportDatasetCSV()">Download CSV</button>
+              </div>
+
+              <div style="display: flex; justify-content: space-between; align-items: center; padding: 10px; background: var(--bg-canvas); border: 1px solid var(--border-subtle); border-radius: var(--radius-sm);">
+                <div>
+                  <div style="font-weight: 600;">Model Benchmark Metrics JSON</div>
+                  <div style="font-size: 11px; color: var(--text-muted);">Confusion matrix, epoch loss & validation stats</div>
+                </div>
+                <button type="button" class="btn-secondary" onclick="exportStatsJSON()">Download JSON</button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Appearance Theme Control -->
+          <div class="panel" style="grid-column: 1 / -1; margin-top: 10px;">
+            <div class="panel-header">
+              <div class="panel-title">Interface Appearance & Theme</div>
+              <div class="panel-subtitle mono">Visual System Customization</div>
+            </div>
+            <div class="panel-body">
+              <div style="font-size: 11.5px; color: var(--text-muted); margin-bottom: 12px;">
+                Select your preferred visual mode for operational telemetry and disaster analysis:
+              </div>
+              <div class="theme-card-group">
+                <div class="theme-card" id="themeCardDark" onclick="selectThemeSetting('dark')">
+                  <span style="font-size: 16px;">🌙</span>
+                  <div>
+                    <div style="font-weight: 600;">Dark Mode</div>
+                    <div style="font-size: 10.5px; color: var(--text-muted);">Calm charcoal & slate (Default)</div>
+                  </div>
+                </div>
+                <div class="theme-card" id="themeCardLight" onclick="selectThemeSetting('light')">
+                  <span style="font-size: 16px;">☀️</span>
+                  <div>
+                    <div style="font-weight: 600;">Light Mode</div>
+                    <div style="font-size: 10.5px; color: var(--text-muted);">Clean paper-white & graphite</div>
+                  </div>
+                </div>
+                <div class="theme-card" id="themeCardSystem" onclick="selectThemeSetting('system')">
+                  <span style="font-size: 16px;">💻</span>
+                  <div>
+                    <div style="font-weight: 600;">System Sync</div>
+                    <div style="font-size: 10.5px; color: var(--text-muted);">Matches operating system preference</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+      </section>
+
     </div>
-    {% endif %}
   </main>
 
-  <!-- Footer Info -->
-  <footer class="system-footer">
-    <div>
-      Disaster Response Automation System • Powered by TensorFlow & Keras
+  <!-- ========================================================================
+       SLIDE-OVER TWEET DETAIL DRAWER
+       ======================================================================== -->
+  <div id="drawerBackdrop" class="drawer-overlay" onclick="closeDetailDrawer()"></div>
+  <aside id="tweetDrawer" class="drawer-panel">
+    <div class="drawer-header">
+      <div class="drawer-title" id="drawerTitle">Signal Inspection // #0001</div>
+      <button type="button" class="drawer-close" onclick="closeDetailDrawer()" aria-label="Close inspection drawer">&times;</button>
     </div>
-    <div class="tech-stack">
-      <span class="tech-pill">Flask :5001</span>
-      <span class="tech-pill">Streamlit :8501</span>
-      <span class="tech-pill">RNN/LSTM</span>
-    </div>
-  </footer>
 
+    <div class="drawer-body">
+      <div>
+        <div class="drawer-section-title">Raw Social Signal Text</div>
+        <div class="tweet-display-card" id="drawerTweetText">
+          Loading signal content...
+        </div>
+      </div>
+
+      <div>
+        <div class="drawer-section-title">Classification Assessment</div>
+        <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 8px;">
+          <div id="drawerClassBadge"><span class="badge badge-danger">🚨 DISASTER EMERGENCY</span></div>
+          <div id="drawerResourceBadge"><span class="badge badge-resource water">Water</span></div>
+        </div>
+        <div class="result-metric-grid" style="margin-top: 6px;">
+          <div class="result-metric-item">
+            <div class="label">Confidence Score</div>
+            <div class="val mono" id="drawerConfidenceVal">94.7%</div>
+          </div>
+          <div class="result-metric-item">
+            <div class="label">Raw Logit Output</div>
+            <div class="val mono" id="drawerProbVal">0.9472</div>
+          </div>
+        </div>
+      </div>
+
+      <div>
+        <div class="drawer-section-title">Tokenized Signal Decomposition</div>
+        <div style="font-size: 11px; color: var(--text-muted); margin-bottom: 6px;">
+          Sanitized tokens mapped against the 5,000-word vocabulary (highlighted = emergency signal keyword):
+        </div>
+        <div class="token-chip-container" id="drawerTokensContainer">
+          <!-- Populated dynamically -->
+        </div>
+      </div>
+
+      <div>
+        <div class="drawer-section-title">Telemetry Metadata</div>
+        <div class="meta-list">
+          <div class="meta-row"><span class="meta-key">Record ID</span><span class="meta-val mono" id="drawerMetaId">#0001</span></div>
+          <div class="meta-row"><span class="meta-key">Ingestion Timestamp</span><span class="meta-val mono" id="drawerMetaTimestamp">2026-10-01 12:00:00</span></div>
+          <div class="meta-row"><span class="meta-key">Inference Runtime</span><span class="meta-val">NumPy Bi-LSTM Vector Engine</span></div>
+          <div class="meta-row"><span class="meta-key">Decision Threshold</span><span class="meta-val mono">0.5000</span></div>
+          <div class="meta-row"><span class="meta-key">Sequence Length</span><span class="meta-val mono">30 tokens (post-padded)</span></div>
+        </div>
+      </div>
+    </div>
+  </aside>
+
+  <!-- ========================================================================
+       DATA INITIALIZATION & CLIENT LOGIC
+       ======================================================================== -->
   <script>
-    function loadPreset(text) {
-      const textarea = document.getElementById('tweetInput');
-      textarea.value = text;
-      textarea.focus();
+    // Embedded Initial Data from Flask / Vercel Server
+    window.INITIAL_DATA = {
+      stats: {{ initial_stats | tojson | safe if initial_stats else 'null' }},
+      tweets: {{ initial_tweets | tojson | safe if initial_tweets else 'null' }},
+      modelInfo: {{ initial_model_info | tojson | safe if initial_model_info else 'null' }},
+      dataset: {{ initial_dataset | tojson | safe if initial_dataset else 'null' }}
+    };
+
+    // Global application state
+    const state = {
+      currentTab: 'overview',
+      stats: window.INITIAL_DATA.stats || {},
+      tweets: window.INITIAL_DATA.tweets || { records: [], total: 8000, page: 1, total_pages: 320 },
+      dataset: window.INITIAL_DATA.dataset || { records: [], total: 3572, page: 1, total_pages: 143 },
+      analysisFilter: 'all',
+      analysisResource: 'all',
+      analysisSearch: '',
+      analysisPage: 1,
+      datasetFilter: 'all',
+      datasetSearch: '',
+      datasetPage: 1,
+      threshold: 0.50
+    };
+
+    // Tab Navigation
+    function switchTab(tabId) {
+      state.currentTab = tabId;
+      document.querySelectorAll('.tab-view').forEach(view => view.classList.remove('active'));
+      const targetView = document.getElementById('view-' + tabId);
+      if (targetView) targetView.classList.add('active');
+
+      document.querySelectorAll('.nav-item').forEach(item => item.classList.remove('active'));
+      const activeNavBtn = document.querySelector(`button[onclick="switchTab('${tabId}')"]`);
+      if (activeNavBtn) activeNavBtn.classList.add('active');
+
+      // Update breadcrumb
+      const titles = {
+        'overview': 'Overview',
+        'analysis': 'Tweet Analysis',
+        'analytics': 'Analytics',
+        'model': 'Model Performance',
+        'dataset': 'Dataset',
+        'methodology': 'Methodology',
+        'settings': 'Settings'
+      };
+      document.getElementById('topbarBreadcrumb').textContent = titles[tabId] || tabId;
+
+      // Close mobile drawer if open
+      closeMobileSidebar();
+
+      // If switching to table views, ensure data is rendered
+      if (tabId === 'analysis' && (!state.tweets.records || state.tweets.records.length === 0)) {
+        fetchTweets();
+      } else if (tabId === 'dataset' && (!state.dataset.records || state.dataset.records.length === 0)) {
+        fetchDataset();
+      }
     }
 
-    function clearText() {
-      const textarea = document.getElementById('tweetInput');
-      textarea.value = '';
-      textarea.focus();
+    // Mobile Sidebar Drawer
+    function toggleMobileSidebar() {
+      const sidebar = document.getElementById('appSidebar');
+      const backdrop = document.getElementById('mobileBackdrop');
+      sidebar.classList.toggle('mobile-open');
+      backdrop.classList.toggle('open');
     }
+
+    function closeMobileSidebar() {
+      const sidebar = document.getElementById('appSidebar');
+      const backdrop = document.getElementById('mobileBackdrop');
+      sidebar.classList.remove('mobile-open');
+      backdrop.classList.remove('open');
+    }
+
+    // Quick Presets
+    function applyPreset(text) {
+      const input = document.getElementById('triageInput');
+      input.value = text;
+      input.focus();
+    }
+
+    function clearTriageInput() {
+      document.getElementById('triageInput').value = '';
+      document.getElementById('triageInput').focus();
+    }
+
+    // Live AJAX Classification Submission
+    async function handleTriageSubmit(e) {
+      e.preventDefault();
+      const input = document.getElementById('triageInput');
+      const text = input.value.trim();
+      if (!text) return;
+
+      const submitBtn = document.getElementById('triageSubmitBtn');
+      const origHtml = submitBtn.innerHTML;
+      submitBtn.innerHTML = '<span>Inferring...</span>';
+      submitBtn.disabled = true;
+
+      try {
+        const response = await fetch('/api/predict', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ tweet: text })
+        });
+        const data = await response.json();
+        renderTriageResult(data);
+      } catch (err) {
+        console.warn('AJAX inference error, falling back to form submit:', err);
+        document.getElementById('triageForm').submit();
+      } finally {
+        submitBtn.innerHTML = origHtml;
+        submitBtn.disabled = false;
+      }
+    }
+
+    function renderTriageResult(data) {
+      const area = document.getElementById('liveResultArea');
+      area.style.display = 'block';
+      area.className = 'live-result-panel ' + (data.is_request ? 'is-disaster' : 'is-normal');
+
+      // Badge
+      const badge = document.getElementById('liveResultBadge');
+      if (data.is_request) {
+        badge.innerHTML = '<span class="badge badge-danger">🚨 DISASTER EMERGENCY DETECTED</span>';
+      } else {
+        badge.innerHTML = '<span class="badge badge-safe">✅ INFORMATIONAL / NON-DISASTER</span>';
+      }
+
+      // Resource badge
+      const resBadge = document.getElementById('liveResourceBadge');
+      if (data.resource && data.resource !== 'None' && data.resource !== 'unspecified resource') {
+        resBadge.innerHTML = `<span class="badge badge-resource ${data.resource}">${data.resource}</span>`;
+      } else {
+        resBadge.innerHTML = '';
+      }
+
+      // Result text
+      const resultText = document.getElementById('liveResultText');
+      if (data.is_request) {
+        resultText.textContent = `${data.resource.toUpperCase()} is required in that area (${data.probability.toFixed(2)})`;
+      } else {
+        resultText.textContent = `NOT A REQUEST (${data.probability.toFixed(2)})`;
+      }
+
+      // Metrics
+      document.getElementById('liveConfidenceVal').textContent = `${data.confidence_percent.toFixed(1)}%`;
+      document.getElementById('liveProbVal').textContent = data.probability.toFixed(4);
+      document.getElementById('liveResourceVal').textContent = data.resource || 'None';
+      document.getElementById('liveStatusVal').textContent = data.status || (data.probability > 0.8 ? 'High Confidence' : 'Moderate');
+
+      // If user is currently inspecting detail drawer, update it too
+      openDetailDrawerWithData(data);
+    }
+
+    function openTriageModal() {
+      switchTab('overview');
+      const input = document.getElementById('triageInput');
+      input.focus();
+      input.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }
+
+    // ========================================================================
+    // TWEET ANALYSIS TABLE & FILTER LOGIC
+    // ========================================================================
+    function setAnalysisFilter(filterType, btnEl) {
+      state.analysisFilter = filterType;
+      state.analysisPage = 1;
+      document.querySelectorAll('.filter-pills .filter-pill').forEach(b => b.classList.remove('active'));
+      if (btnEl) btnEl.classList.add('active');
+      fetchTweets();
+    }
+
+    function handleResourceFilterChange() {
+      const select = document.getElementById('analysisResourceSelect');
+      state.analysisResource = select.value;
+      state.analysisPage = 1;
+      fetchTweets();
+    }
+
+    let searchTimeout = null;
+    function handleTableSearchInput() {
+      clearTimeout(searchTimeout);
+      searchTimeout = setTimeout(() => {
+        state.analysisSearch = document.getElementById('tableSearchInput').value;
+        state.analysisPage = 1;
+        fetchTweets();
+      }, 250);
+    }
+
+    function changeAnalysisPage(delta) {
+      const newPage = state.analysisPage + delta;
+      if (newPage < 1 || (state.tweets && newPage > state.tweets.total_pages)) return;
+      state.analysisPage = newPage;
+      fetchTweets();
+    }
+
+    async function fetchTweets() {
+      const tbody = document.getElementById('analysisTableBody');
+      tbody.innerHTML = `<tr><td colspan="8" style="text-align: center; padding: 30px;"><div class="skeleton" style="height: 24px; max-width: 300px; margin: 0 auto;"></div></td></tr>`;
+
+      const params = new URLSearchParams({
+        page: state.analysisPage,
+        page_size: 25,
+        search: state.analysisSearch,
+        filter_type: state.analysisFilter,
+        resource: state.analysisResource
+      });
+
+      try {
+        const res = await fetch(`/api/tweets?${params.toString()}`);
+        const data = await res.json();
+        state.tweets = data;
+        renderTweetsTable(data);
+      } catch (err) {
+        console.error('Error fetching tweets:', err);
+      }
+    }
+
+    function renderTweetsTable(data) {
+      const tbody = document.getElementById('analysisTableBody');
+      if (!data.records || data.records.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="8"><div class="empty-state"><div class="empty-title">No signals match current filter criteria</div><div>Try clearing your search keyword or changing the filter pills.</div></div></td></tr>`;
+        return;
+      }
+
+      tbody.innerHTML = data.records.map(r => {
+        const isEmergency = r.is_request;
+        const classBadge = isEmergency 
+          ? '<span class="badge badge-danger">🚨 DISASTER</span>' 
+          : '<span class="badge badge-safe">⚪ NORMAL</span>';
+        
+        const confNum = r.confidence;
+        const isHigh = confNum >= 80;
+        const confMeter = `<span class="mini-conf-bar"><span class="mini-conf-fill ${isHigh ? 'high' : ''}" style="width: ${confNum}%;"></span></span>`;
+
+        let resClass = 'unspecified';
+        if (r.resource.includes('water')) resClass = 'water';
+        else if (r.resource.includes('medical')) resClass = 'medical';
+        else if (r.resource.includes('shelter')) resClass = 'shelter';
+        else if (r.resource.includes('food')) resClass = 'food';
+        else if (r.resource.includes('rescue')) resClass = 'rescue';
+        else if (r.resource.includes('cloth')) resClass = 'clothing';
+
+        const resBadge = `<span class="badge badge-resource ${resClass}">${r.resource}</span>`;
+        const statusText = confNum > 80 ? 'High Confidence' : (confNum >= 50 ? 'Moderate' : 'Baseline');
+
+        return `
+          <tr onclick="inspectTweet(${r.id})">
+            <td class="mono" style="color: var(--text-muted); font-size: 11px;">#${String(r.id).padStart(4, '0')}</td>
+            <td class="tweet-cell">${escapeHtml(r.tweet)}</td>
+            <td>${classBadge}</td>
+            <td class="mono">${confNum.toFixed(1)}% ${confMeter}</td>
+            <td>${resBadge}</td>
+            <td class="mono" style="font-size: 11px;">${statusText}</td>
+            <td class="mono" style="font-size: 11px; color: var(--text-muted);">${r.timestamp}</td>
+            <td style="text-align: right;">
+              <button type="button" class="btn-secondary" style="padding: 2px 8px; font-size: 11px;" onclick="event.stopPropagation(); inspectTweet(${r.id})">Inspect</button>
+            </td>
+          </tr>
+        `;
+      }).join('');
+
+      // Update footer pagination
+      const start = (data.page - 1) * data.page_size + 1;
+      const end = Math.min(start + data.records.length - 1, data.total);
+      document.getElementById('pageRangeDisplay').textContent = `${start}–${end}`;
+      document.getElementById('pageTotalDisplay').textContent = data.total.toLocaleString();
+      document.getElementById('currentPageNum').textContent = data.page;
+      document.getElementById('totalPagesNum').textContent = data.total_pages;
+
+      document.getElementById('prevPageBtn').disabled = data.page <= 1;
+      document.getElementById('nextPageBtn').disabled = data.page >= data.total_pages;
+    }
+
+    // ========================================================================
+    // TWEET DETAIL DRAWER
+    // ========================================================================
+    function inspectTweet(id) {
+      const record = state.tweets.records ? state.tweets.records.find(r => r.id === id) : null;
+      if (!record) return;
+
+      openDetailDrawerWithData({
+        id: record.id,
+        tweet: record.tweet,
+        cleaned: record.cleaned_text,
+        is_request: record.is_request,
+        confidence_percent: record.confidence,
+        probability: record.confidence_raw,
+        resource: record.resource,
+        timestamp: record.timestamp
+      });
+    }
+
+    function openDetailDrawerWithData(data) {
+      const drawer = document.getElementById('tweetDrawer');
+      const backdrop = document.getElementById('drawerBackdrop');
+
+      document.getElementById('drawerTitle').textContent = `Signal Inspection // #${String(data.id || 1).padStart(4, '0')}`;
+      document.getElementById('drawerTweetText').textContent = data.tweet;
+
+      const classBadge = document.getElementById('drawerClassBadge');
+      if (data.is_request) {
+        classBadge.innerHTML = '<span class="badge badge-danger">🚨 DISASTER EMERGENCY DETECTED</span>';
+      } else {
+        classBadge.innerHTML = '<span class="badge badge-safe">✅ INFORMATIONAL / NON-DISASTER</span>';
+      }
+
+      const resBadge = document.getElementById('drawerResourceBadge');
+      if (data.resource && data.resource !== 'None' && data.resource !== 'unspecified resource') {
+        resBadge.innerHTML = `<span class="badge badge-resource ${data.resource}">${data.resource}</span>`;
+      } else {
+        resBadge.innerHTML = '';
+      }
+
+      document.getElementById('drawerConfidenceVal').textContent = `${(data.confidence_percent || 0).toFixed(1)}%`;
+      document.getElementById('drawerProbVal').textContent = (data.probability || 0).toFixed(4);
+
+      // Token chip display
+      const tokensContainer = document.getElementById('drawerTokensContainer');
+      const tokens = (data.cleaned || data.tweet || '').toLowerCase().replace(/[^a-z\s]/g, '').split(/\s+/).filter(Boolean);
+      const keywords = ['flood', 'water', 'earthquake', 'fire', 'trapped', 'food', 'shelter', 'doctor', 'medical', 'hospital', 'rescue', 'evacuation', 'urgent', 'emergency', 'help', 'collapsed', 'damage', 'injured', 'cyclone', 'drought', 'storm'];
+
+      tokensContainer.innerHTML = tokens.slice(0, 30).map(t => {
+        const isMatch = keywords.includes(t);
+        return `<span class="token-chip ${isMatch ? 'match' : ''}">${escapeHtml(t)}</span>`;
+      }).join('');
+
+      document.getElementById('drawerMetaId').textContent = `#${String(data.id || 1).padStart(4, '0')}`;
+      document.getElementById('drawerMetaTimestamp').textContent = data.timestamp || new Date().toISOString().replace('T', ' ').slice(0, 19);
+
+      drawer.classList.add('open');
+      backdrop.classList.add('open');
+    }
+
+    function closeDetailDrawer() {
+      document.getElementById('tweetDrawer').classList.remove('open');
+      document.getElementById('drawerBackdrop').classList.remove('open');
+    }
+
+    // ========================================================================
+    // DATASET EXPLORER LOGIC
+    // ========================================================================
+    function setDatasetFilter(label, btnEl) {
+      state.datasetFilter = label;
+      state.datasetPage = 1;
+      btnEl.parentElement.querySelectorAll('.filter-pill').forEach(b => b.classList.remove('active'));
+      btnEl.classList.add('active');
+      fetchDataset();
+    }
+
+    let datasetSearchTimeout = null;
+    function handleDatasetSearchInput() {
+      clearTimeout(datasetSearchTimeout);
+      datasetSearchTimeout = setTimeout(() => {
+        state.datasetSearch = document.getElementById('datasetSearchInput').value;
+        state.datasetPage = 1;
+        fetchDataset();
+      }, 250);
+    }
+
+    function changeDatasetPage(delta) {
+      const newPage = state.datasetPage + delta;
+      if (newPage < 1 || (state.dataset && newPage > state.dataset.total_pages)) return;
+      state.datasetPage = newPage;
+      fetchDataset();
+    }
+
+    async function fetchDataset() {
+      const tbody = document.getElementById('datasetTableBody');
+      tbody.innerHTML = `<tr><td colspan="6" style="text-align: center; padding: 30px;"><div class="skeleton" style="height: 24px; max-width: 300px; margin: 0 auto;"></div></td></tr>`;
+
+      const params = new URLSearchParams({
+        page: state.datasetPage,
+        page_size: 25,
+        search: state.datasetSearch,
+        label: state.datasetFilter
+      });
+
+      try {
+        const res = await fetch(`/api/dataset?${params.toString()}`);
+        const data = await res.json();
+        state.dataset = data;
+        renderDatasetTable(data);
+      } catch (err) {
+        console.error('Error fetching dataset:', err);
+      }
+    }
+
+    function renderDatasetTable(data) {
+      const tbody = document.getElementById('datasetTableBody');
+      if (!data.records || data.records.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="6"><div class="empty-state"><div class="empty-title">No training records found</div></div></td></tr>`;
+        return;
+      }
+
+      tbody.innerHTML = data.records.map(r => {
+        const isDisaster = r.label === 1;
+        const labelBadge = isDisaster 
+          ? '<span class="badge badge-danger">1 // DISASTER</span>' 
+          : '<span class="badge badge-safe">0 // NON-DISASTER</span>';
+
+        return `
+          <tr>
+            <td class="mono" style="color: var(--text-muted);">${r.num}</td>
+            <td class="tweet-cell">${escapeHtml(r.text)}</td>
+            <td class="mono" style="color: var(--text-secondary); font-size: 11px;">${escapeHtml(r.clean_text)}</td>
+            <td>${labelBadge}</td>
+            <td class="mono" style="font-size: 11px;">${escapeHtml(r.resources)}</td>
+            <td style="color: var(--text-muted); font-size: 11.5px;">${escapeHtml(r.location || 'N/A')}</td>
+          </tr>
+        `;
+      }).join('');
+
+      const start = (data.page - 1) * data.page_size + 1;
+      const end = Math.min(start + data.records.length - 1, data.total);
+      document.getElementById('datasetRangeDisplay').textContent = `${start}–${end}`;
+      document.getElementById('datasetTotalDisplay').textContent = data.total.toLocaleString();
+      document.getElementById('currentDatasetPage').textContent = data.page;
+      document.getElementById('totalDatasetPages').textContent = data.total_pages;
+
+      document.getElementById('prevDatasetBtn').disabled = data.page <= 1;
+      document.getElementById('nextDatasetBtn').disabled = data.page >= data.total_pages;
+    }
+
+    // ========================================================================
+    // DATA EXPORT UTILITIES
+    // ========================================================================
+    function exportResultsCSV() {
+      window.location.href = '/export/results.csv';
+    }
+
+    function exportDatasetCSV() {
+      window.location.href = '/export/dataset.csv';
+    }
+
+    function exportStatsJSON() {
+      window.location.href = '/export/stats.json';
+    }
+
+    function updateThresholdDisplay(val) {
+      document.getElementById('thresholdValDisplay').textContent = parseFloat(val).toFixed(2);
+      state.threshold = parseFloat(val);
+    }
+
+    function refreshLiveData() {
+      fetch('/api/stats')
+        .then(r => r.json())
+        .then(stats => {
+          state.stats = stats;
+          document.getElementById('kpiTotalTweets').textContent = stats.total_tweets.toLocaleString();
+          document.getElementById('kpiDisasterCount').textContent = stats.disaster_tweets.toLocaleString();
+          document.getElementById('kpiNormalCount').textContent = stats.normal_tweets.toLocaleString();
+          document.getElementById('kpiAvgConf').textContent = `${(stats.avg_confidence * 100).toFixed(1)}%`;
+        })
+        .catch(err => console.warn(err));
+    }
+
+    function handleGlobalSearch(e) {
+      if (e.key === 'Enter') {
+        const q = e.target.value.trim();
+        if (q) {
+          switchTab('analysis');
+          const tableInput = document.getElementById('tableSearchInput');
+          tableInput.value = q;
+          handleTableSearchInput();
+        }
+      }
+    }
+
+    // Global keyboard listener
+    window.addEventListener('keydown', (e) => {
+      // Shortcut '/' to focus search
+      if (e.key === '/' && document.activeElement.tagName !== 'INPUT' && document.activeElement.tagName !== 'TEXTAREA') {
+        e.preventDefault();
+        document.getElementById('globalSearchInput').focus();
+      }
+      // Shortcut Esc to close drawer
+      if (e.key === 'Escape') {
+        closeDetailDrawer();
+        closeMobileSidebar();
+      }
+    });
+
+    function escapeHtml(text) {
+      if (!text) return '';
+      return String(text)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#039;');
+    }
+
+    // ========================================================================
+    // THEME MANAGEMENT (DARK / LIGHT / SYSTEM SYNC)
+    // ========================================================================
+    function initTheme() {
+      const savedTheme = localStorage.getItem('disasternet_theme') || 'dark';
+      applyTheme(savedTheme, false);
+    }
+
+    function applyTheme(theme, save = true) {
+      let effectiveTheme = theme;
+      if (theme === 'system') {
+        effectiveTheme = window.matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark';
+      }
+      document.documentElement.setAttribute('data-theme', effectiveTheme);
+      if (save) {
+        localStorage.setItem('disasternet_theme', theme);
+      }
+
+      // Update Topbar toggle button
+      const icon = document.getElementById('themeToggleIcon');
+      const label = document.getElementById('themeToggleLabel');
+      if (icon) {
+        icon.textContent = effectiveTheme === 'light' ? '🌙' : '☀️';
+      }
+      if (label) {
+        label.textContent = effectiveTheme === 'light' ? 'Dark Mode' : 'Light Mode';
+      }
+
+      // Update Settings theme cards
+      document.querySelectorAll('.theme-card').forEach(c => c.classList.remove('active'));
+      const activeCardId = theme === 'system' ? 'themeCardSystem' : (theme === 'light' ? 'themeCardLight' : 'themeCardDark');
+      const activeCard = document.getElementById(activeCardId);
+      if (activeCard) activeCard.classList.add('active');
+    }
+
+    function toggleTheme() {
+      const current = document.documentElement.getAttribute('data-theme') || 'dark';
+      const next = current === 'dark' ? 'light' : 'dark';
+      applyTheme(next, true);
+    }
+
+    function selectThemeSetting(theme) {
+      applyTheme(theme, true);
+    }
+
+    // System theme change listener
+    window.matchMedia('(prefers-color-scheme: light)').addEventListener('change', e => {
+      const saved = localStorage.getItem('disasternet_theme');
+      if (saved === 'system') {
+        applyTheme('system', false);
+      }
+    });
+
+    // Boot application
+    document.addEventListener('DOMContentLoaded', () => {
+      initTheme();
+      // If server preloaded tweets, render them
+      if (state.tweets && state.tweets.records && state.tweets.records.length > 0) {
+        renderTweetsTable(state.tweets);
+      }
+      if (state.dataset && state.dataset.records && state.dataset.records.length > 0) {
+        renderDatasetTable(state.dataset);
+      }
+    });
   </script>
 </body>
 </html>

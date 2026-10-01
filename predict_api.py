@@ -109,12 +109,33 @@ def extract_resource(text):
     else:
         return "unspecified resource"
 
+import data_service
+from flask import send_file
+
+def _get_context_data():
+    return {
+        'initial_stats': data_service.get_stats(),
+        'initial_tweets': data_service.query_tweets(page=1, page_size=25),
+        'initial_model_info': data_service.get_model_performance(),
+        'initial_dataset': data_service.query_dataset(page=1, page_size=25)
+    }
+
 @app.route('/')
 def home():
-    return render_template('index.html', prediction=None, tweet='', is_request=None, resource=None, confidence=None)
+    ctx = _get_context_data()
+    return render_template('index.html', 
+                           prediction=None, 
+                           tweet='', 
+                           is_request=None, 
+                           resource=None, 
+                           confidence=None,
+                           prob=None,
+                           cleaned=None,
+                           **ctx)
 
 @app.route('/predict', methods=['POST'])
 def predict():
+    ctx = _get_context_data()
     tweet = request.form.get('tweet', '')
     if not tweet.strip():
         return render_template('index.html', 
@@ -122,7 +143,10 @@ def predict():
                                tweet='',
                                is_request=None,
                                resource=None,
-                               confidence=None)
+                               confidence=None,
+                               prob=None,
+                               cleaned=None,
+                               **ctx)
     
     cleaned = clean_text(tweet)
     prob = predict_probability(cleaned)
@@ -139,10 +163,12 @@ def predict():
     return render_template('index.html', 
                            prediction=result, 
                            tweet=tweet,
+                           cleaned=cleaned,
                            is_request=is_request,
                            resource=resource,
                            confidence=confidence_pct,
-                           prob=round(prob, 3))
+                           prob=round(prob, 3),
+                           **ctx)
 
 @app.route('/api/predict', methods=['POST'])
 def api_predict():
@@ -153,15 +179,79 @@ def api_predict():
     cleaned = clean_text(tweet)
     prob = predict_probability(cleaned)
     is_request = prob >= 0.5
-    resource = extract_resource(tweet) if is_request else None
+    confidence_pct = round(prob * 100, 1)
+    resource = extract_resource(tweet) if is_request else "None"
+    
+    # Token matches and signal indicators for explainability
+    tokens = cleaned.split()
+    emergency_signals = [t for t in tokens if t in ['flood', 'earthquake', 'fire', 'trapped', 'water', 'food', 'shelter', 'doctor', 'medical', 'hospital', 'rescue', 'evacuation', 'urgent', 'emergency', 'help', 'collapsed', 'damage', 'injured', 'cyclone', 'drought', 'storm']]
+    
     return jsonify({
         'tweet': tweet,
         'cleaned': cleaned,
+        'tokens': tokens,
+        'emergency_signals': emergency_signals,
         'is_request': is_request,
         'probability': round(prob, 4),
-        'confidence_percent': round(prob * 100, 1),
-        'resource': resource
+        'confidence_percent': confidence_pct,
+        'resource': resource,
+        'status': 'High confidence' if prob > 0.8 else ('Moderate' if prob >= 0.5 else 'Non-Disaster')
     })
+
+@app.route('/api/stats', methods=['GET'])
+def api_stats():
+    return jsonify(data_service.get_stats())
+
+@app.route('/api/tweets', methods=['GET'])
+def api_tweets():
+    page = int(request.args.get('page', 1))
+    page_size = min(int(request.args.get('page_size', 25)), 100)
+    search = request.args.get('search', '')
+    filter_type = request.args.get('filter_type', 'all')
+    resource = request.args.get('resource', 'all')
+    sort_by = request.args.get('sort_by', 'default')
+    result = data_service.query_tweets(
+        page=page, 
+        page_size=page_size, 
+        search=search, 
+        filter_type=filter_type, 
+        resource=resource,
+        sort_by=sort_by
+    )
+    return jsonify(result)
+
+@app.route('/api/dataset', methods=['GET'])
+def api_dataset():
+    page = int(request.args.get('page', 1))
+    page_size = min(int(request.args.get('page_size', 25)), 100)
+    search = request.args.get('search', '')
+    label = request.args.get('label', 'all')
+    result = data_service.query_dataset(
+        page=page, 
+        page_size=page_size, 
+        search=search, 
+        label=label
+    )
+    return jsonify(result)
+
+@app.route('/api/model-info', methods=['GET'])
+def api_model_info():
+    return jsonify(data_service.get_model_performance())
+
+@app.route('/export/<file_type>', methods=['GET'])
+def export_file(file_type):
+    if file_type == 'results.csv' or file_type == 'classification_results.csv':
+        filepath = os.path.join(BASE_DIR, 'classification_results.csv')
+        if os.path.exists(filepath):
+            return send_file(filepath, as_attachment=True, download_name='classification_results.csv', mimetype='text/csv')
+    elif file_type == 'dataset.csv' or file_type == 'dataset_cleaned.csv':
+        filepath = os.path.join(BASE_DIR, 'dataset_cleaned.csv')
+        if os.path.exists(filepath):
+            return send_file(filepath, as_attachment=True, download_name='dataset_cleaned.csv', mimetype='text/csv')
+    elif file_type == 'stats.json':
+        stats = data_service.get_stats()
+        return jsonify(stats)
+    return jsonify({'error': 'File not found'}), 404
 
 if __name__ == "__main__":
     port = 5000
@@ -180,3 +270,4 @@ if __name__ == "__main__":
             pass
     print(f"🚀 Disaster Tweet Classifier Web App running on http://127.0.0.1:{port}")
     app.run(debug=True, port=port)
+
