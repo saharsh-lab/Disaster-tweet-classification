@@ -1,4 +1,9 @@
 {
+  "functions": {
+    "api/index.py": {
+      "includeFiles": "{classification_results.csv,dataset_cleaned.csv,templates/**,api/**}"
+    }
+  },
   "rewrites": [
     {
       "source": "/(.*)",

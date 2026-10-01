@@ -282,6 +282,24 @@ def api_dataset():
 def api_model_info():
     return jsonify(data_service.get_model_performance())
 
+@app.route('/export/<file_type>', methods=['GET'])
+@app.route('/api/index/export/<file_type>', methods=['GET'])
+def export_file(file_type):
+    from flask import send_file
+    if file_type in ('results.csv', 'classification_results.csv'):
+        filepath = resolve_file('classification_results.csv')
+        if os.path.exists(filepath):
+            return send_file(filepath, as_attachment=True, download_name='classification_results.csv', mimetype='text/csv')
+    elif file_type in ('dataset.csv', 'dataset_cleaned.csv'):
+        filepath = resolve_file('dataset_cleaned.csv')
+        if os.path.exists(filepath):
+            return send_file(filepath, as_attachment=True, download_name='dataset_cleaned.csv', mimetype='text/csv')
+    elif file_type == 'stats.json':
+        stats = data_service.get_stats()
+        return jsonify(stats)
+    return jsonify({'error': 'File not found'}), 404
+
 # Export WSGI application for Vercel
 app = app
+
 
