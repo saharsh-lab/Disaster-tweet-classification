@@ -1,4 +1,10 @@
-# 🚨 Disaster Response Tweet Classifier & Intelligence Platform
+<p align="center">
+  <img src="assets/flarewatch-logo.svg" alt="Flarewatch — Crisis Signal Intelligence" width="420">
+</p>
+
+# Flarewatch — Crisis Signal Intelligence
+
+> *See every distress signal before it fades.* Flarewatch is an AI disaster intelligence platform that classifies social-media crisis signals with a bidirectional LSTM and extracts the humanitarian resources people are asking for.
 
 [![Live Demo on Vercel](https://img.shields.io/badge/Vercel-Live%20App-000000.svg?style=for-the-badge&logo=vercel&logoColor=white)](https://disaster-tweet-classification.vercel.app)
 [![Python](https://img.shields.io/badge/Python-3.10%20%7C%203.11%20%7C%203.12-3776AB.svg?style=flat&logo=python&logoColor=white)](https://www.python.org/)
@@ -24,34 +30,34 @@ Try entering disaster scenarios or humanitarian assistance queries directly in t
 
 ## 🌟 Key Features
 
-### 🧠 Dual-Inference Architecture
-- **Lightweight NumPy Serverless Engine (`model_weights.npz` + `word_index.json`)**:
-  - Implements an ultra-fast, standalone forward-pass Bidirectional LSTM purely in vector NumPy operations.
-  - Zero heavy C++/CUDA TensorFlow runtime required (<30MB total bundle footprint).
-  - Powers the live Vercel deployment with fast cold-starts and low memory consumption.
-- **Full Deep Learning Pipeline (`disaster_rnn_model.h5` + `tokenizer.pkl`)**:
-  - Trained Bidirectional RNN / LSTM architecture evaluating temporal sequence patterns across tweet text.
-  - Automatic fallback between NumPy and Keras backends depending on available environment dependencies.
+### 🧠 Models (pure NumPy at inference time)
+- **Request classifier — Bidirectional LSTM (v2):** decides whether a message is someone asking for help. Trained on 21k real disaster messages labelled for requests; **88.2% accuracy, 71.3% request F1, 89.7% ROC-AUC** on the held-out test set (the original tornado-trained v1 scored 32.3% / 30.6% on the same test). See [docs/MODEL_CARD.md](docs/MODEL_CARD.md).
+- **Needs model — multi-label TF-IDF + logistic regression:** tags water, food, shelter, clothing, medical aid and rescue, several per message. **75.8% micro-F1 on real requests vs. 53.7%** for the original keyword rules.
+- **Word-level explanations:** occlusion — each word is removed in turn and the change in P(request) is reported, so the UI shows which words actually drove a decision.
+- **Serverless-friendly:** the Bi-LSTM and the needs model run as NumPy forward passes (no TensorFlow on the server, verified against Keras to 5 × 10⁻⁷). The Keras `.h5` + `tokenizer.pkl` path is still used by the batch pipeline and as a local fallback.
+
+### 🌍 Live signals & locations
+- **Live feed (`/api/live`):** public Mastodon hashtag timelines (#flood, #earthquake, #wildfire, …) — no API key — plus Bluesky search when credentials are configured. Bot accounts and non-English posts are skipped, everything is classified on arrival and cached for 3 minutes.
+- **Place extraction:** a GeoNames gazetteer (34k cities, regions and countries) finds places named in a message, with context-based disambiguation ("Alabama and Georgia" → the US state). Request locations are plotted on the globe and listed on the Analytics tab.
 
 ### 🏷️ Humanitarian Resource Classification
-Automatically extracts and tags critical emergency requirements:
-- 💧 **Water & Sanitation**: Drinking water, potable water tanks, purification tablets.
-- 🏥 **Medical Aid & Healthcare**: First responders, doctors, trauma kits, emergency medication.
-- 🏕️ **Emergency Shelter**: Evacuation centers, temporary housing, displaced family accommodation.
-- 🍞 **Food & Rations**: Emergency food packets, infant formula, non-perishable rations.
-- 🦺 **Search & Rescue**: Boat rescue operations, trapped civilian extraction, airlifts.
-- 👕 **Clothing & Warmth**: Blankets, protective clothing, winter essentials.
+- 💧 **Water & Sanitation** · 🏥 **Medical Aid** · 🏕️ **Emergency Shelter** · 🍞 **Food & Rations** · 🦺 **Search & Rescue** · 👕 **Clothing & Warmth**
 
-### 💻 Modern Web Application
-- **Glassmorphism UI**: Dark mode interface designed with CSS backdrop-filters, responsive typography, and animated status badges.
-- **One-Click Presets**: Pre-populated scenarios for quick testing (Flood & Water, Earthquake & Medical, Cyclone & Shelter, Food Crisis, Casual Non-Disaster).
-- **Interactive Metric Visualizers**: Live confidence progress bars, probability scores, and dynamic categorization pills.
-- **Form Persistence**: Preserves input query and classification state across submissions.
+### 💻 Web Application
+- **Warm Charcoal & Sand design system**: Charcoal surfaces, sand accents, soft-white type and a single muted-red alert colour, with matching **Light** and **Dark** themes (plus System sync). Instrument Serif display type, Inter UI text and IBM Plex Mono figures.
+- **Restrained motion**: Quiet page transitions, count-up metrics and a single 3D element — a slowly rotating, draggable dot globe marking places named in requests and live disaster posts. Everything pauses with the built-in *Reduce motion* switch or the OS setting.
+- **Interactive charts (Chart.js)**: Request split doughnut, confidence histogram with the 0.50 decision threshold, resource-demand polar chart, training-prior vs. stream drift check, toggleable training curves and a per-class precision/recall/F1 radar — all driven by the stats API and `model_metrics.json`.
+- **Classification console**: One-click examples, probability gauge, word-influence explanation, multi-need badges, places mentioned, measured round-trip latency and notifications (`⌘/Ctrl + Enter` to run).
+- **Model transparency**: v1 vs. baseline vs. v2 comparison, sanity probes, needs-model vs. keyword-rules table and the full confusion matrix on the Model tab.
+- **Accessible by design**: WCAG-AA text contrast in both themes, visible focus rings, skip link, ARIA roles/states for navigation, toggles, charts and the inspection drawer, and keyboard support throughout.
+- **Progressive enhancement**: AJAX calls to the JSON API, with a plain Flask form POST fallback rendered server-side.
+- **Responsive**: Off-canvas navigation and single-column layouts down to 360 px; deep links per tab (e.g. `/#model`).
 
 ### 📊 Streamlit Monitoring & Analytics Dashboard
-- Live feed telemetry tracking request vs. informational/casual post ratios using Plotly.
+- Flarewatch-themed console with light and dark themes (`.streamlit/config.toml`), matching Plotly styling chosen from the viewer's active theme, and tabs for Overview, Signal stream and Export.
+- Live feed telemetry tracking request vs. informational/casual post ratios using Plotly, plus a confidence histogram split by class.
 - Humanitarian resource breakdown charts and distribution analytics.
-- Integrated historical database containing 8,000+ categorized disaster tweets.
+- Historical stream of 8,000 batch classifications (1,729 distinct tweets, re-scored with the current models).
 - Instant CSV and JSON summary export capabilities.
 
 ### ⚙️ Automated Batch Processing & Scheduling
@@ -64,30 +70,29 @@ Automatically extracts and tags critical emergency requirements:
 
 ```text
 .
-├── api/
-│   └── index.py                 # Vercel Serverless WSGI entry point
-├── templates/
-│   └── index.html               # Glassmorphic web application UI
-├── predict_api.py               # Flask Web Server & REST API endpoint
-├── streamlit_dashboard.py       # Streamlit analytics dashboard launcher
-├── automated_dashboard.py       # Streamlit metrics & visualization engine
-├── automated_classifier.py      # Automated batch NLP processor
-├── automated_data_collector.py  # Dataset collector and cleaning pipeline
-├── main_automation.py           # Scheduled automation controller
-├── disaster_rnn_model.h5        # Pre-trained Keras Bi-LSTM model weights
-├── model_weights.npz            # Standalone NumPy weights for serverless inference
-├── tokenizer.pkl                # Pickled text tokenizer vocabulary
-├── word_index.json              # Lightweight JSON vocabulary for zero-dependency parsing
-├── classification_results.csv   # Historical categorized dataset (8,000+ records)
-├── dataset_cleaned.csv          # Cleaned training dataset
-├── datasets/                    # Raw & benchmark disaster tweet sets
-├── train_model.ipynb            # Model architecture, training & evaluation notebook
-├── requirements.txt             # Minimal dependencies (Flask, NumPy, Gunicorn)
-├── requirements-full.txt        # Full stack dependencies (TensorFlow, Streamlit, Plotly)
-├── vercel.json                  # Vercel serverless deployment routing config
-├── Procfile                     # Heroku / Railway / Render process definition
-└── README.md                    # Project documentation
+├── predict_api.py            # Local Flask server & REST API          → python predict_api.py
+├── streamlit_dashboard.py    # Streamlit dashboard                    → streamlit run streamlit_dashboard.py
+├── main_automation.py        # Batch pipeline controller              → python main_automation.py --mode single
+├── flarewatch/               # Shared package used by every entry point
+│   ├── inference.py          #   NumPy Bi-LSTM, needs model, occlusion explanations
+│   ├── geo.py                #   Gazetteer place extraction (data/gazetteer.json, GeoNames CC BY 4.0)
+│   ├── live.py               #   Mastodon / Bluesky live feed with caching
+│   ├── data_service.py       #   Stats, stream and dataset queries
+│   └── paths.py              #   Single place that knows where models/ and data/ live
+├── automation/               # Batch pipeline: collector, Keras classifier, Streamlit dashboard renderer
+├── models/                   # Deployed models + evaluation report (model_metrics.json)
+├── data/                     # Stored stream, training corpus, raw/ input datasets
+├── templates/                # Web UI (index.html)
+├── api/                      # Vercel function (index.py) + bundle generated by scripts/sync_vercel_bundle.py
+├── scripts/                  # Training, re-scoring, gazetteer build, Vercel bundle sync
+├── tests/                    # unittest suite (models, geo, live feed, API, Vercel bundle)
+├── notebooks/                # Original v1 training notebook (kept for reference)
+├── docs/                     # MODEL_CARD.md, AUTOMATION.md
+├── assets/                   # Logo
+└── .github/workflows/ci.yml  # Tests on every push / pull request
 ```
+
+Generated or downloaded folders — `build/` (training staging), `data/external/` (datasets), `logs/` (automation) — are git-ignored.
 
 ---
 
@@ -141,7 +146,19 @@ streamlit run streamlit_dashboard.py
 ```
 - Open **[http://127.0.0.1:8501](http://127.0.0.1:8501)** in your browser to inspect live distribution charts, resource breakdown graphs, and tweet metrics.
 
+### Live feed configuration (optional)
+
+| Variable | Default | Purpose |
+|---|---|---|
+| `FLAREWATCH_MASTODON_INSTANCE` | `mastodon.social` | Instance whose public hashtag timelines are read |
+| `FLAREWATCH_LIVE_TAGS` | flood, earthquake, wildfire, hurricane, cyclone, tornado, disasterrelief, evacuation | Comma-separated hashtags |
+| `FLAREWATCH_LIVE_TTL` | `180` | Cache lifetime in seconds |
+| `FLAREWATCH_LIVE_INCLUDE_BOTS` | unset | `1` to keep automated accounts |
+| `BLUESKY_HANDLE`, `BLUESKY_APP_PASSWORD` | unset | Enable Bluesky search (free app password from Bluesky settings) |
+
 ### Option C: Automated Ingestion & Batch Runner
+
+See [docs/AUTOMATION.md](docs/AUTOMATION.md) for configuration. Input CSVs go in `data/raw/`; logs and reports are written to `logs/`.
 
 ```bash
 # Execute a single batch classification run
@@ -172,17 +189,66 @@ Content-Type: application/json
 }
 ```
 
-#### Response (`200 OK`):
+#### Response (`200 OK`), abridged (`explanation` shows the 3 most influential words; `tokens` omitted):
 ```json
 {
-  "tweet": "Urgent! Flash flooding in Sector 4, people trapped on rooftops, need immediate rescue boats and clean drinking water!",
-  "cleaned": "urgent flash flooding sector people trapped rooftops need immediate rescue boats clean drinking water",
   "is_request": true,
-  "confidence_percent": 99.7,
-  "probability": 0.9968,
-  "resource": "water"
+  "probability": 0.8128,
+  "confidence_percent": 81.3,
+  "resource": "rescue",
+  "resources": [
+    {
+      "name": "rescue",
+      "probability": 0.9806,
+      "detected": true,
+      "source": "model",
+      "evidence": [
+        "rescue",
+        "trapped",
+        "rooftops"
+      ]
+    },
+    {
+      "name": "water",
+      "probability": 0.8136,
+      "detected": true,
+      "source": "model",
+      "evidence": [
+        "water",
+        "drinking water",
+        "drinking"
+      ]
+    }
+  ],
+  "locations": [],
+  "explanation": [
+    {
+      "token": "need",
+      "weight": 0.4682,
+      "in_vocab": true
+    },
+    {
+      "token": "sector",
+      "weight": 0.1753,
+      "in_vocab": true
+    },
+    {
+      "token": "water",
+      "weight": 0.1314,
+      "in_vocab": true
+    }
+  ],
+  "cleaned": "urgent flash flooding sector people trapped rooftops need immediate rescue boats clean drinking water",
+  "status": "High confidence"
 }
 ```
+`resource` (single primary need) is kept for backward compatibility; `resources`, `locations` and `explanation` are additive.
+
+### `GET /api/live`
+Recent public posts from Mastodon (and Bluesky if configured), each classified with `is_request`, `probability`, `resources` and `locations`. Responses are cached for `FLAREWATCH_LIVE_TTL` seconds; `status` is `ok`, `partial`, `stale` (serving the last good snapshot) or `unavailable`.
+
+### Other endpoints
+`GET /api/stats` · `GET /api/tweets` · `GET /api/dataset` · `GET /api/model-info` · `GET /api/health` · `GET /export/{results.csv|dataset.csv|stats.json}`
 
 #### Example cURL:
 
@@ -202,15 +268,30 @@ curl -X POST http://127.0.0.1:5001/api/predict \
 
 ---
 
-## 🔬 Model Architecture & Training
+## 🔬 Models, Training & Evaluation
 
-The core classification model is a **Bidirectional Long Short-Term Memory (Bi-LSTM)** network trained on thousands of disaster-related tweets:
-1. **Text Preprocessing**: URL stripping, mention/hashtag cleanup, alphanumeric normalization, and custom stopword filtration.
-2. **Embedding Layer**: Projects input tokens (sequence length: 30) into dense vector space.
-3. **Bidirectional LSTM Layer**: Captures bidirectional contextual signals across prior and subsequent tokens.
-4. **Dense & Sigmoid Activation**: Dense layers with Dropout regularization feeding into a calibrated Sigmoid output neuron estimating $P(\text{Disaster Request})$.
+Full details — data, metrics, limitations and reproduction steps — are in **[docs/MODEL_CARD.md](docs/MODEL_CARD.md)**.
 
-For complete training experiments, loss/accuracy curves, and confusion matrices, explore [train_model.ipynb](train_model.ipynb).
+| Request classifier (same test set) | Accuracy | Precision | Recall | F1 | ROC-AUC |
+|---|---|---|---|---|---|
+| v1 Bi-LSTM (tornado labels) | 32.3% | 19.0% | 78.6% | 30.6% | 46.4% |
+| TF-IDF + logistic regression baseline | 86.7% | 62.3% | 75.2% | 68.1% | 88.9% |
+| **v2 Bi-LSTM (deployed)** | **88.2%** | **66.2%** | **77.4%** | **71.3%** | **89.7%** |
+
+```bash
+pip install -r requirements-full.txt
+python scripts/train_request_model.py --install   # Bi-LSTM request classifier
+python scripts/train_needs_model.py --install     # multi-label needs model
+python scripts/rescore_results.py                 # update the stored stream
+python scripts/sync_vercel_bundle.py              # refresh api/ for Vercel
+```
+
+## ✅ Tests & CI
+
+```bash
+python -m unittest discover -s tests -t .
+```
+34 tests cover preprocessing, NumPy-vs-training parity, explanations, the needs model, place extraction, the live feed (network mocked), every API route including the Vercel rewrite dispatcher, that `api/` is in sync with the repository root, and that the `api/` folder runs on its own (as Vercel deploys it). GitHub Actions runs them on every push and pull request with only the serving dependencies installed.
 
 ---
 
@@ -228,3 +309,5 @@ Contributions, issues, and feature requests are welcome!
 ## 📄 License
 
 Distributed under the MIT License. See `LICENSE` for more information.
+
+Third-party data: Disaster Response Messages (Figure Eight / Appen; see the licence note in [docs/MODEL_CARD.md](docs/MODEL_CARD.md)) and place data from [GeoNames](https://www.geonames.org) (CC BY 4.0).

@@ -23,3 +23,11 @@ __pycache__/
 automation_log.txt
 automation_report_*.html
 *.log
+
+# Downloaded training data (re-download with the commands in docs/MODEL_CARD.md; not redistributed)
+data/external/
+data/processed_data.csv
+# Staging folders written by the training scripts (installed copies live in models/ and data/)
+build/
+# Automation logs and generated reports
+logs/
