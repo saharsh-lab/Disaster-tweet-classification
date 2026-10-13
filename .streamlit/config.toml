@@ -1,0 +1,33 @@
+# Flarewatch — Warm Charcoal & Sand. Both themes are defined so viewers can switch
+# between them in Streamlit's settings menu; custom HTML follows st.context.theme.
+[theme]
+font = "sans-serif"
+baseRadius = "medium"
+showWidgetBorder = true
+
+[theme.dark]
+primaryColor = "#C7B69B"
+backgroundColor = "#141311"
+secondaryBackgroundColor = "#211F1B"
+textColor = "#F2EDE4"
+borderColor = "#2E2B26"
+linkColor = "#D3C4AB"
+redColor = "#B85C55"
+blueBackgroundColor = "#292621"
+blueTextColor = "#BDB5A8"
+chartCategoricalColors = ["#C7B69B", "#B85C55", "#7F93A3", "#93A08A", "#C9A15A", "#9A8AA0"]
+
+[theme.light]
+primaryColor = "#7A6648"
+backgroundColor = "#F4F1EA"
+secondaryBackgroundColor = "#FCFBF8"
+textColor = "#1C1A17"
+borderColor = "#E3DED4"
+linkColor = "#7A6648"
+redColor = "#A64B44"
+blueBackgroundColor = "#ECE7DE"
+blueTextColor = "#4A453E"
+chartCategoricalColors = ["#A08A66", "#A64B44", "#5F7484", "#6E7D63", "#9C7A35", "#7D6C84"]
+
+[client]
+toolbarMode = "minimal"

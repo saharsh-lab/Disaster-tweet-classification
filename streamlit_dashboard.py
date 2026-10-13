@@ -2,7 +2,7 @@ import sys
 import streamlit as st
 
 # Ensure page config is called first before any other Streamlit component
-st.set_page_config(page_title="Disaster Response Classifier Dashboard", layout="wide")
+st.set_page_config(page_title="Flarewatch · Crisis Signal Intelligence", page_icon="🔥", layout="wide")
 
 try:
     from streamlit_autorefresh import st_autorefresh
@@ -10,7 +10,7 @@ try:
 except Exception:
     pass
 
-from automated_dashboard import AutomatedDashboard
+from automation.dashboard import AutomatedDashboard
 
 dashboard = AutomatedDashboard()
 dashboard.create_streamlit_app() 
