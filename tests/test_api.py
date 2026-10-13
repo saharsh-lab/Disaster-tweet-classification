@@ -76,6 +76,33 @@ class VercelAppTest(unittest.TestCase):
         self.assertIn("total_tweets", r.get_json())
 
 
+class BundleSelfContainedTest(unittest.TestCase):
+    """Vercel only ships api/: the app must work from a copy of that folder alone."""
+
+    def test_api_folder_runs_in_isolation(self):
+        import shutil
+        import tempfile
+        with tempfile.TemporaryDirectory() as tmp:
+            bundle = os.path.join(tmp, "api")
+            shutil.copytree(os.path.join(ROOT, "api"), bundle, ignore=shutil.ignore_patterns("__pycache__"))
+            script = (
+                "import sys; sys.path.insert(0, '.'); import index\n"
+                "import flarewatch, os\n"
+                "assert os.path.dirname(flarewatch.__file__).startswith(os.getcwd()), flarewatch.__file__\n"
+                "c = index.app.test_client()\n"
+                "assert c.get('/').status_code == 200\n"
+                "r = c.post('/api/predict', json={'tweet': 'Shelter required for family of 4 in Mumbai'}).get_json()\n"
+                "assert r['is_request'] and r['locations'][0]['name'] == 'Mumbai', r\n"
+                "for u in ('/api/stats', '/api/model-info', '/api/dataset', '/export/results.csv'):\n"
+                "    assert c.get(u).status_code == 200, u\n"
+                "print('bundle ok')\n"
+            )
+            env = {k: v for k, v in os.environ.items() if k != "PYTHONPATH"}
+            result = subprocess.run([sys.executable, "-I", "-c", script], cwd=bundle, capture_output=True, text=True, env=env)
+        self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+        self.assertIn("bundle ok", result.stdout)
+
+
 class BundleSyncTest(unittest.TestCase):
     def test_api_copies_match_root(self):
         result = subprocess.run([sys.executable, os.path.join(ROOT, "scripts", "sync_vercel_bundle.py"), "--check"],

@@ -7,6 +7,8 @@ import json
 import os
 import sys
 
+from flarewatch.paths import RESULTS_CSV
+
 class SafeStream:
     """Wrapper around stdout/stderr to prevent OSError (Errno 5 EIO) when terminal is disconnected."""
     def __init__(self, target):
@@ -147,7 +149,7 @@ def style_figure(fig, p, legend=False):
 
 
 class AutomatedDashboard:
-    def __init__(self, results_file="classification_results.csv"):
+    def __init__(self, results_file=RESULTS_CSV):
         self.results_file = results_file
         self.results_db = []
         self.load_existing_results()

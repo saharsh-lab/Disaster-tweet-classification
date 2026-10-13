@@ -5,21 +5,23 @@ Run this after installing a new model so the dashboard's historical signal strea
 models that are actually serving predictions (request classifier + needs model).
 
 Usage:
-    venv/bin/python rescore_results.py
+    python scripts/rescore_results.py
     venv/bin/python scripts/sync_vercel_bundle.py   # then refresh the Vercel copies
 """
 import os
+import sys
 
-import pandas as pd
+ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+sys.path.insert(0, ROOT)  # allow `python scripts/<name>.py` from anywhere
 
-from flarewatch.inference import Classifier
+import pandas as pd  # noqa: E402
 
-BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-RESULTS = os.path.join(BASE_DIR, "classification_results.csv")
+from flarewatch.inference import Classifier  # noqa: E402
+from flarewatch.paths import RESULTS_CSV as RESULTS  # noqa: E402
 
 
 def main():
-    clf = Classifier([BASE_DIR])
+    clf = Classifier()
     df = pd.read_csv(RESULTS)
     before = df["is_request"].astype(str).str.lower().isin(["true", "1"]).sum()
     cache = {}

@@ -2,22 +2,21 @@ import os
 import sys
 from flask import Flask, request, jsonify, render_template, send_file
 
-import data_service
+from flarewatch import data_service
 from flarewatch.inference import Classifier, EMERGENCY_KEYWORDS, THRESHOLD, clean_text, extract_resource_keywords
 from flarewatch.live import LiveFeed
+from flarewatch.paths import DATASET_CSV, MODELS_DIR, RESULTS_CSV, TEMPLATES_DIR
 
-BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-MODEL_NPZ = os.path.join(BASE_DIR, "model_weights.npz")
-MODEL_H5 = os.path.join(BASE_DIR, "disaster_rnn_model.h5")
-TOKENIZER_PKL = os.path.join(BASE_DIR, "tokenizer.pkl")
-TEMPLATES_DIR = os.path.join(BASE_DIR, "templates")
+MODEL_NPZ = os.path.join(MODELS_DIR, "model_weights.npz")
+MODEL_H5 = os.path.join(MODELS_DIR, "disaster_rnn_model.h5")
+TOKENIZER_PKL = os.path.join(MODELS_DIR, "tokenizer.pkl")
 MAX_LEN = 30
 
 app = Flask(__name__, template_folder=TEMPLATES_DIR)
 
 # Dual inference: pure NumPy weights when present (fast, same code as Vercel), Keras otherwise
 if os.path.exists(MODEL_NPZ):
-    classifier = Classifier([BASE_DIR])
+    classifier = Classifier()
     live_feed = LiveFeed(classifier)
 
     def classify(tweet):
@@ -170,11 +169,11 @@ def api_model_info():
 @app.route('/export/<file_type>', methods=['GET'])
 def export_file(file_type):
     if file_type == 'results.csv' or file_type == 'classification_results.csv':
-        filepath = os.path.join(BASE_DIR, 'classification_results.csv')
+        filepath = RESULTS_CSV
         if os.path.exists(filepath):
             return send_file(filepath, as_attachment=True, download_name='classification_results.csv', mimetype='text/csv')
     elif file_type == 'dataset.csv' or file_type == 'dataset_cleaned.csv':
-        filepath = os.path.join(BASE_DIR, 'dataset_cleaned.csv')
+        filepath = DATASET_CSV
         if os.path.exists(filepath):
             return send_file(filepath, as_attachment=True, download_name='dataset_cleaned.csv', mimetype='text/csv')
     elif file_type == 'stats.json':

@@ -10,7 +10,7 @@ try:
 except Exception:
     pass
 
-from automated_dashboard import AutomatedDashboard
+from automation.dashboard import AutomatedDashboard
 
 dashboard = AutomatedDashboard()
 dashboard.create_streamlit_app() 

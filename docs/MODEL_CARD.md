@@ -4,12 +4,12 @@ Flarewatch runs two small models, both executed in pure NumPy at inference time 
 
 | Model | Question it answers | File |
 |---|---|---|
-| **Request classifier** (Bi-LSTM, v2) | Is this message someone asking for help? | `model_weights.npz`, `word_index.json` |
-| **Needs model** (TF-IDF + logistic regression, v1) | Which resources does it ask for? (multi-label) | `needs_model.npz` |
+| **Request classifier** (Bi-LSTM, v2) | Is this message someone asking for help? | `models/model_weights.npz`, `models/word_index.json` |
+| **Needs model** (TF-IDF + logistic regression, v1) | Which resources does it ask for? (multi-label) | `models/needs_model.npz` |
 
 Place names are found with a rule-based GeoNames gazetteer (`flarewatch/data/gazetteer.json`), not a learned model.
 
-All figures below are produced by the training scripts and stored in `model_metrics.json`; the dashboard's Model tab reads the same file.
+All figures below are produced by the training scripts and stored in `models/model_metrics.json`; the dashboard's Model tab reads the same file.
 
 ## Intended use
 
@@ -38,7 +38,7 @@ including water, food, shelter, clothing, medical help and search & rescue.
 
 ### Why v1 was replaced
 
-The original model (`train_model.ipynb`) was trained on 3,572 tweets about a single US tornado outbreak, labelled
+The original model (`notebooks/train_model.ipynb`) was trained on 3,572 tweets about a single US tornado outbreak, labelled
 "about the disaster" rather than "asking for help". It also cleaned text differently at training and serving time.
 On the request test set it flags almost everything that mentions a disaster:
 
@@ -48,13 +48,13 @@ On the request test set it flags almost everything that mentions a disaster:
 | TF-IDF + logistic regression baseline | 86.7% | 62.3% | 75.2% | 68.1% | 88.9% |
 | **v2 Bi-LSTM (deployed)** | **88.2%** | **66.2%** | **77.4%** | **71.3%** | **89.7%** |
 
-Hand-written sanity probes (never used for training, see `train_request_model.py`): v1 5/12 correct, v2 12/12.
+Hand-written sanity probes (never used for training, see `scripts/train_request_model.py`): v1 5/12 correct, v2 12/12.
 Example: *"Shelter required for family of 4 in Mumbai"* — v1 0.04, v2 0.77.
 
 ## Request classifier (v2)
 
 - **Architecture:** Embedding(5,000 × 64) → Bidirectional LSTM (64 + 64) → Dropout 0.5 → Dense(32, ReLU) → Dense(1, sigmoid). Unchanged from v1, so the serverless forward pass did not change.
-- **Preprocessing:** lowercase; strip URLs, @mentions, #hashtags, digits and punctuation; drop 38 stopwords; post-pad/truncate to 30 tokens. Shared by training and every serving path (`flarewatch/inference.py`).
+- **Preprocessing:** lowercase; strip URLs, @mentions, #hashtags, digits and punctuation; drop 38 stopwords; post-pad/truncate to 30 tokens. Shared by training and every serving path ([`flarewatch/inference.py`](../flarewatch/inference.py)).
 - **Training:** Adam (lr 1e-3), batch 32, class-weighted binary cross-entropy (requests are 17% of messages), early stopping on validation loss (best epoch 2 of 4).
 - **Export check:** NumPy forward pass matches Keras to 4.8 × 10⁻⁷ on 300 test messages.
 - **Test results:** accuracy 88.2%, request precision 66.2%, recall 77.4%, F1 71.3%, ROC-AUC 89.7%, macro F1 82.0%.
@@ -93,7 +93,7 @@ On all test messages micro-F1 is 67.5% vs. 51.8%. Rescue remains weak (few examp
 - **Vocabulary:** 5,000 words; unknown words (many place names, slang) map to a single `<OOV>` token.
 - **English only.** Non-English posts are filtered out of the live feed.
 - **Places:** gazetteer matching can mis-tag surnames that are also towns (e.g. "Thornton") and only knows places with ≥ 15,000 inhabitants plus countries and first-level regions.
-- **Stored stream:** `classification_results.csv` holds 8,000 rows but only 1,729 distinct tweets (repeated batch runs); counts on the dashboard include those repeats.
+- **Stored stream:** `data/classification_results.csv` holds 8,000 rows but only 1,729 distinct tweets (repeated batch runs); counts on the dashboard include those repeats.
 
 ## Live data
 
@@ -107,21 +107,21 @@ The Bluesky path is implemented but has not been exercised with real credentials
 pip install -r requirements-full.txt
 
 # Data (not committed)
-mkdir -p training_data/disaster_response training_data/geonames
+mkdir -p data/external/disaster_response data/external/geonames
 for s in train validation test; do
-  curl -L -o training_data/disaster_response/$s.parquet \
+  curl -L -o data/external/disaster_response/$s.parquet \
     "https://huggingface.co/datasets/community-datasets/disaster_response_messages/resolve/main/data/$s-00000-of-00001.parquet"
 done
-curl -L -o training_data/geonames/cities15000.zip https://download.geonames.org/export/dump/cities15000.zip
-unzip -o training_data/geonames/cities15000.zip -d training_data/geonames
-curl -L -o training_data/geonames/countryInfo.txt https://download.geonames.org/export/dump/countryInfo.txt
-curl -L -o training_data/geonames/admin1CodesASCII.txt https://download.geonames.org/export/dump/admin1CodesASCII.txt
+curl -L -o data/external/geonames/cities15000.zip https://download.geonames.org/export/dump/cities15000.zip
+unzip -o data/external/geonames/cities15000.zip -d data/external/geonames
+curl -L -o data/external/geonames/countryInfo.txt https://download.geonames.org/export/dump/countryInfo.txt
+curl -L -o data/external/geonames/admin1CodesASCII.txt https://download.geonames.org/export/dump/admin1CodesASCII.txt
 
-python train_request_model.py --install   # request classifier -> repo root
-python train_needs_model.py --install     # needs model -> repo root
-python scripts/build_gazetteer.py         # places
-python rescore_results.py                 # re-score the stored stream with the new models
-python scripts/sync_vercel_bundle.py      # refresh the api/ copies used by Vercel
+python scripts/train_request_model.py --install   # request classifier -> models/
+python scripts/train_needs_model.py --install     # needs model -> models/
+python scripts/build_gazetteer.py                 # places -> flarewatch/data/gazetteer.json
+python scripts/rescore_results.py                 # re-score data/classification_results.csv
+python scripts/sync_vercel_bundle.py              # refresh the api/ copies used by Vercel
 python -m unittest discover -s tests -t .
 ```
 
