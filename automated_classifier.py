@@ -1,8 +1,10 @@
+import os
 import pickle
 import numpy as np
 import pandas as pd
-import re
 from datetime import datetime
+
+from flarewatch.inference import STOPWORDS, Classifier as SharedClassifier, clean_text as shared_clean_text, extract_resource_keywords
 from tensorflow.keras.models import load_model
 from tensorflow.keras.preprocessing.sequence import pad_sequences
 
@@ -26,47 +28,28 @@ class AutomatedClassifier:
         
         self.MAX_LEN = 30
         
-        # Define stopwords for text cleaning
-        self.STOPWORDS = {
-            'a', 'an', 'the', 'and', 'or', 'but', 'if', 'while', 'with', 'to', 'from', 'in', 'on', 'for', 'of', 'at',
-            'is', 'are', 'was', 'were', 'be', 'been', 'being', 'have', 'has', 'had', 'do', 'does', 'did',
-            'i', 'you', 'he', 'she', 'it', 'we', 'they', 'me', 'him', 'her', 'us', 'them'
-        }
-    
+        # Text cleaning and resource detection are shared with the web apps (flarewatch package)
+        self.STOPWORDS = STOPWORDS
+        try:
+            self.shared = SharedClassifier([os.path.dirname(os.path.abspath(__file__))])
+        except Exception as e:
+            print(f"⚠️ Needs model unavailable, using keyword rules: {e}")
+            self.shared = None
+
     def clean_text(self, text):
-        """Clean and preprocess text"""
+        """Clean and preprocess text (identical to the serving pipeline)"""
         if not isinstance(text, str):
             return ""
-        
-        text = text.lower()
-        text = re.sub(r"http\S+|www\S+", '', text)  # Remove URLs
-        text = re.sub(r"@\w+|#\w+", '', text)       # Remove mentions/hashtags
-        text = re.sub(r"[^a-z\s]", '', text)        # Remove punctuation and numbers
-        words = text.split()
-        words = [w for w in words if w not in self.STOPWORDS]
-        return ' '.join(words)
-    
+        return shared_clean_text(text)
+
     def extract_resource(self, text):
-        """Extract the type of resource being requested"""
+        """Primary resource requested: multi-label needs model, keyword rules as fallback"""
         if not isinstance(text, str):
             return "unspecified resource"
-        
-        text = text.lower()
-        if "food" in text:
-            return "food"
-        elif "water" in text:
-            return "water"
-        elif "shelter" in text or "accommodation" in text:
-            return "shelter"
-        elif "medical" in text or "medicine" in text or "doctor" in text:
-            return "medical aid"
-        elif "clothes" in text or "clothing" in text:
-            return "clothing"
-        elif "rescue" in text:
-            return "rescue"
-        else:
-            return "unspecified resource"
-    
+        if self.shared is not None:
+            return self.shared.resources_for(text, shared_clean_text(text))[0]
+        return extract_resource_keywords(text)
+
     def predict_single(self, tweet):
         """Predict for a single tweet"""
         if self.model is None or self.tokenizer is None:

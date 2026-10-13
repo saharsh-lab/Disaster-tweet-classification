@@ -1,9 +1,10 @@
 import os
 import sys
-import re
-import pickle
-import numpy as np
-from flask import Flask, request, jsonify, render_template
+from flask import Flask, request, jsonify, render_template, send_file
+
+import data_service
+from flarewatch.inference import Classifier, EMERGENCY_KEYWORDS, THRESHOLD, clean_text, extract_resource_keywords
+from flarewatch.live import LiveFeed
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 MODEL_NPZ = os.path.join(BASE_DIR, "model_weights.npz")
@@ -14,103 +15,38 @@ MAX_LEN = 30
 
 app = Flask(__name__, template_folder=TEMPLATES_DIR)
 
-# Load tokenizer
-with open(TOKENIZER_PKL, "rb") as f:
-    tokenizer = pickle.load(f)
-word_index = getattr(tokenizer, 'word_index', {})
-oov_id = word_index.get('<OOV>', 1)
-
-# Check for ultra-fast pure NumPy weights (Vercel Serverless compatible, < 250MB limit)
+# Dual inference: pure NumPy weights when present (fast, same code as Vercel), Keras otherwise
 if os.path.exists(MODEL_NPZ):
-    weights = np.load(MODEL_NPZ)
-    w_emb = weights['w_emb']
-    w_f_i = weights['w_f_i']
-    w_f_h = weights['w_f_h']
-    b_f = weights['b_f']
-    w_b_i = weights['w_b_i']
-    w_b_h = weights['w_b_h']
-    b_b = weights['b_b']
-    w_d1 = weights['w_d1']
-    b_d1 = weights['b_d1']
-    w_d2 = weights['w_d2']
-    b_d2 = weights['b_d2']
+    classifier = Classifier([BASE_DIR])
+    live_feed = LiveFeed(classifier)
 
-    def _sigmoid(x):
-        return 1.0 / (1.0 + np.exp(-np.clip(x, -30, 30)))
-
-    def _run_lstm(x_seq, w_i, w_h, b):
-        units = w_h.shape[0]
-        h = np.zeros(units, dtype=np.float32)
-        c = np.zeros(units, dtype=np.float32)
-        for x_t in x_seq:
-            gates = np.dot(x_t, w_i) + np.dot(h, w_h) + b
-            i_gate = _sigmoid(gates[:units])
-            f_gate = _sigmoid(gates[units:2*units])
-            c_cand = np.tanh(gates[2*units:3*units])
-            o_gate = _sigmoid(gates[3*units:4*units])
-            c = f_gate * c + i_gate * c_cand
-            h = o_gate * np.tanh(c)
-        return h
-
-    def predict_probability(cleaned_text):
-        seq = []
-        for w in cleaned_text.split():
-            idx = word_index.get(w, oov_id)
-            if idx >= 5000:
-                idx = oov_id
-            seq.append(idx)
-        pad = np.zeros(MAX_LEN, dtype=np.int32)
-        pad[:min(len(seq), MAX_LEN)] = seq[:min(len(seq), MAX_LEN)]
-        
-        emb = w_emb[pad]
-        h_f = _run_lstm(emb, w_f_i, w_f_h, b_f)
-        h_b = _run_lstm(emb[::-1], w_b_i, w_b_h, b_b)
-        h_bidi = np.concatenate([h_f, h_b])
-        d1 = np.maximum(0, np.dot(h_bidi, w_d1) + b_d1)
-        prob = float(_sigmoid(np.dot(d1, w_d2) + b_d2)[0])
-        return prob
+    def classify(tweet):
+        return classifier.classify(tweet)
 else:
+    import pickle
     from tensorflow.keras.models import load_model
     from tensorflow.keras.preprocessing.sequence import pad_sequences
+    with open(TOKENIZER_PKL, "rb") as f:
+        tokenizer = pickle.load(f)
     model = load_model(MODEL_H5)
+    live_feed = None
 
-    def predict_probability(cleaned_text):
-        seq = tokenizer.texts_to_sequences([cleaned_text])
-        padded = pad_sequences(seq, maxlen=MAX_LEN, padding='post')
-        return float(model.predict(padded)[0][0])
+    def classify(tweet):
+        cleaned = clean_text(tweet)
+        seq = tokenizer.texts_to_sequences([cleaned])
+        prob = float(model.predict(pad_sequences(seq, maxlen=MAX_LEN, padding='post'), verbose=0)[0][0])
+        is_request = prob >= THRESHOLD
+        resource = extract_resource_keywords(tweet) if is_request else "None"
+        tokens = cleaned.split()
+        return {
+            'prediction': f"{resource.capitalize()} is required in that area ({prob:.2f})" if is_request else f"NOT A REQUEST ({prob:.2f})",
+            'tweet': tweet, 'cleaned': cleaned, 'tokens': tokens,
+            'emergency_signals': [t for t in tokens if t in EMERGENCY_KEYWORDS],
+            'is_request': is_request, 'probability': round(prob, 4), 'confidence_percent': round(prob * 100, 1),
+            'resource': resource, 'resources': [], 'locations': [], 'explanation': [],
+            'status': 'High confidence' if prob > 0.8 else ('Moderate' if prob >= THRESHOLD else 'Non-Disaster'),
+        }
 
-STOPWORDS = {
-    'a', 'an', 'the', 'and', 'or', 'but', 'if', 'while', 'with', 'to', 'from', 'in', 'on', 'for', 'of', 'at',
-    'is', 'are', 'was', 'were', 'be', 'been', 'being', 'have', 'has', 'had', 'do', 'does', 'did',
-    'i', 'you', 'he', 'she', 'it', 'we', 'they', 'me', 'him', 'her', 'us', 'them'
-}
-
-def clean_text(text):
-    text = text.lower()
-    text = re.sub(r"http\S+|www\S+", '', text)
-    text = re.sub(r"@\w+|#\w+", '', text)
-    text = re.sub(r"[^a-z\s]", '', text)
-    return ' '.join([w for w in text.split() if w not in STOPWORDS])
-
-def extract_resource(text):
-    text = text.lower()
-    if "food" in text:
-        return "food"
-    elif "water" in text:
-        return "water"
-    elif "shelter" in text or "accommodation" in text:
-        return "shelter"
-    elif "medical" in text or "medicine" in text or "doctor" in text:
-        return "medical aid"
-    elif "clothes" in text or "clothing" in text:
-        return "clothing"
-    elif "rescue" in text:
-        return "rescue"
-    else:
-        return "unspecified resource"
-
-import data_service
-from flask import send_file
 
 def _get_context_data():
     return {
@@ -123,11 +59,11 @@ def _get_context_data():
 @app.route('/')
 def home():
     ctx = _get_context_data()
-    return render_template('index.html', 
-                           prediction=None, 
-                           tweet='', 
-                           is_request=None, 
-                           resource=None, 
+    return render_template('index.html',
+                           prediction=None,
+                           tweet='',
+                           is_request=None,
+                           resource=None,
                            confidence=None,
                            prob=None,
                            cleaned=None,
@@ -138,7 +74,7 @@ def predict():
     ctx = _get_context_data()
     tweet = request.form.get('tweet', '')
     if not tweet.strip():
-        return render_template('index.html', 
+        return render_template('index.html',
                                prediction="Please enter or select a tweet to classify.",
                                tweet='',
                                is_request=None,
@@ -147,27 +83,16 @@ def predict():
                                prob=None,
                                cleaned=None,
                                **ctx)
-    
-    cleaned = clean_text(tweet)
-    prob = predict_probability(cleaned)
-    is_request = prob >= 0.5
-    confidence_pct = round(prob * 100, 1)
 
-    if is_request:
-        resource = extract_resource(tweet)
-        result = f"{resource.capitalize()} is required in that area ({prob:.2f})"
-    else:
-        resource = "None"
-        result = f"NOT A REQUEST ({prob:.2f})"
-        
-    return render_template('index.html', 
-                           prediction=result, 
+    res = classify(tweet)
+    return render_template('index.html',
+                           prediction=res['prediction'],
                            tweet=tweet,
-                           cleaned=cleaned,
-                           is_request=is_request,
-                           resource=resource,
-                           confidence=confidence_pct,
-                           prob=round(prob, 3),
+                           cleaned=res['cleaned'],
+                           is_request=res['is_request'],
+                           resource=res['resource'],
+                           confidence=res['confidence_percent'],
+                           prob=round(res['probability'], 3),
                            **ctx)
 
 @app.route('/api/predict', methods=['POST'])
@@ -176,27 +101,31 @@ def api_predict():
     tweet = data.get('tweet', '')
     if not tweet.strip():
         return jsonify({'error': 'No tweet text provided'}), 400
-    cleaned = clean_text(tweet)
-    prob = predict_probability(cleaned)
-    is_request = prob >= 0.5
-    confidence_pct = round(prob * 100, 1)
-    resource = extract_resource(tweet) if is_request else "None"
-    
-    # Token matches and signal indicators for explainability
-    tokens = cleaned.split()
-    emergency_signals = [t for t in tokens if t in ['flood', 'earthquake', 'fire', 'trapped', 'water', 'food', 'shelter', 'doctor', 'medical', 'hospital', 'rescue', 'evacuation', 'urgent', 'emergency', 'help', 'collapsed', 'damage', 'injured', 'cyclone', 'drought', 'storm']]
-    
+    res = classify(tweet)
     return jsonify({
         'tweet': tweet,
-        'cleaned': cleaned,
-        'tokens': tokens,
-        'emergency_signals': emergency_signals,
-        'is_request': is_request,
-        'probability': round(prob, 4),
-        'confidence_percent': confidence_pct,
-        'resource': resource,
-        'status': 'High confidence' if prob > 0.8 else ('Moderate' if prob >= 0.5 else 'Non-Disaster')
+        'cleaned': res['cleaned'],
+        'tokens': res['tokens'],
+        'emergency_signals': res['emergency_signals'],
+        'is_request': res['is_request'],
+        'probability': res['probability'],
+        'confidence_percent': res['confidence_percent'],
+        'resource': res['resource'],
+        'resources': res['resources'],
+        'locations': res['locations'],
+        'explanation': res.get('explanation', []),
+        'status': res['status']
     })
+
+@app.route('/api/live', methods=['GET'])
+def api_live():
+    if live_feed is None:
+        return jsonify({'status': 'unavailable', 'posts': [], 'errors': ['live feed needs model_weights.npz']}), 503
+    return jsonify(live_feed.get())
+
+@app.route('/api/health', methods=['GET'])
+def api_health():
+    return jsonify({'status': 'healthy', 'service': 'disaster-tweet-classifier', 'runtime': 'flask-local'})
 
 @app.route('/api/stats', methods=['GET'])
 def api_stats():
@@ -211,10 +140,10 @@ def api_tweets():
     resource = request.args.get('resource', 'all')
     sort_by = request.args.get('sort_by', 'default')
     result = data_service.query_tweets(
-        page=page, 
-        page_size=page_size, 
-        search=search, 
-        filter_type=filter_type, 
+        page=page,
+        page_size=page_size,
+        search=search,
+        filter_type=filter_type,
         resource=resource,
         sort_by=sort_by
     )
@@ -227,9 +156,9 @@ def api_dataset():
     search = request.args.get('search', '')
     label = request.args.get('label', 'all')
     result = data_service.query_dataset(
-        page=page, 
-        page_size=page_size, 
-        search=search, 
+        page=page,
+        page_size=page_size,
+        search=search,
         label=label
     )
     return jsonify(result)
@@ -268,6 +197,5 @@ if __name__ == "__main__":
                     port = 5001
         except Exception:
             pass
-    print(f"🚀 Disaster Tweet Classifier Web App running on http://127.0.0.1:{port}")
+    print(f"🔥 Flarewatch running on http://127.0.0.1:{port}")
     app.run(debug=True, port=port)
-
