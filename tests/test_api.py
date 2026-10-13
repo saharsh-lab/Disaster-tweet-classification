@@ -76,6 +76,49 @@ class VercelAppTest(unittest.TestCase):
         self.assertIn("total_tweets", r.get_json())
 
 
+class VercelRewriteTest(unittest.TestCase):
+    """Requests as Vercel delivers them: path /api/index, original path in ?__path__=, matched-path header /api/index."""
+
+    @classmethod
+    def setUpClass(cls):
+        cls.module = load_vercel_app()
+        cls.client = cls.module.app.test_client()
+        cls.headers = {"x-matched-path": "/api/index"}
+
+    def get(self, path, query=""):
+        url = f"/api/index?__path__={path}" + (f"&{query}" if query else "")
+        return self.client.get(url, headers=self.headers)
+
+    def test_get_api_routes_return_json(self):
+        for path in ("/api/stats", "/api/model-info", "/api/health", "/api/tweets", "/api/dataset"):
+            r = self.get(path)
+            self.assertEqual(r.status_code, 200, path)
+            self.assertEqual(r.mimetype, "application/json", path)
+
+    def test_query_string_is_preserved(self):
+        data = self.get("/api/tweets", "page=3&filter_type=disaster").get_json()
+        self.assertEqual(data["page"], 3)
+        self.assertTrue(all(rec["is_request"] for rec in data["records"]))
+
+    def test_live_route(self):
+        with mock.patch.object(self.module.live_feed, "get", return_value={"status": "ok", "posts": []}):
+            self.assertEqual(self.get("/api/live").get_json()["status"], "ok")
+
+    def test_exports(self):
+        r = self.get("/export/results.csv")
+        self.assertEqual(r.mimetype, "text/csv")
+        self.assertEqual(self.get("/export/stats.json").mimetype, "application/json")
+
+    def test_root_and_form_post_still_render_html(self):
+        self.assertEqual(self.get("/").mimetype, "text/html")
+        r = self.client.post("/api/index?__path__=/predict", data={"tweet": "Need clean drinking water, flood"}, headers=self.headers)
+        self.assertIn("is-disaster", r.get_data(as_text=True))
+
+    def test_json_post_predict(self):
+        r = self.client.post("/api/index?__path__=/api/predict", json={"tweet": "Shelter required for family of 4 in Mumbai"}, headers=self.headers)
+        self.assertTrue(r.get_json()["is_request"])
+
+
 class BundleSelfContainedTest(unittest.TestCase):
     """Vercel only ships api/: the app must work from a copy of that folder alone."""
 
