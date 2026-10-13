@@ -12,21 +12,25 @@ from datetime import datetime
 import argparse
 
 # Import our custom modules
-from automated_data_collector import AutomatedDataCollector
-from automated_classifier import AutomatedClassifier
-from automated_dashboard import AutomatedDashboard
+from automation.collector import AutomatedDataCollector, RAW_DATA_DIR
+from automation.classifier import AutomatedClassifier
+from automation.dashboard import AutomatedDashboard
+from flarewatch.paths import RESULTS_CSV, ROOT
+
+LOG_DIR = os.path.join(ROOT, "logs")
 
 class DisasterResponseAutomation:
     def __init__(self, config=None):
         """Initialize the automation system"""
         self.config = config or {
-            'data_directory': 'datasets',
+            'data_directory': RAW_DATA_DIR,
             'max_tweets_per_batch': 1000,
             'batch_size': 32,
             'schedule_interval': 10,  # minutes
-            'results_file': 'classification_results.csv',
-            'log_file': 'automation_log.txt'
+            'results_file': RESULTS_CSV,
+            'log_file': os.path.join(LOG_DIR, 'automation_log.txt')
         }
+        os.makedirs(os.path.dirname(self.config['log_file']), exist_ok=True)
         
         # Initialize components
         print("🚀 Initializing Disaster Response Automation System...")
@@ -100,7 +104,7 @@ class DisasterResponseAutomation:
     def generate_periodic_report(self):
         """Generate periodic reports"""
         try:
-            report_filename = f"automation_report_{datetime.now().strftime('%Y%m%d_%H%M%S')}.html"
+            report_filename = os.path.join(LOG_DIR, f"automation_report_{datetime.now().strftime('%Y%m%d_%H%M%S')}.html")
             self.dashboard.generate_report(report_filename)
             self.log_message(f"📄 Generated periodic report: {report_filename}")
         except Exception as e:
@@ -160,25 +164,9 @@ class DisasterResponseAutomation:
         # Run Streamlit
         import subprocess
         subprocess.run([
-            sys.executable, "-m", "streamlit", "run", 
-            "streamlit_dashboard.py", "--server.port", "8501"
+            sys.executable, "-m", "streamlit", "run",
+            os.path.join(ROOT, "streamlit_dashboard.py"), "--server.port", "8501"
         ])
-
-def create_streamlit_dashboard_file():
-    """Create the Streamlit dashboard file"""
-    dashboard_code = '''
-import streamlit as st
-from automated_dashboard import AutomatedDashboard
-
-if __name__ == "__main__":
-    dashboard = AutomatedDashboard()
-    dashboard.create_streamlit_app()
-'''
-    
-    with open("streamlit_dashboard.py", "w") as f:
-        f.write(dashboard_code)
-    
-    print("✅ Created streamlit_dashboard.py")
 
 def main():
     """Main function with command line interface"""
@@ -189,7 +177,7 @@ def main():
                        help="Schedule interval in minutes (for continuous mode)")
     parser.add_argument("--max-tweets", type=int, default=1000, 
                        help="Maximum tweets to process per batch")
-    parser.add_argument("--data-dir", default="datasets", 
+    parser.add_argument("--data-dir", default=RAW_DATA_DIR, 
                        help="Directory containing datasets")
     
     args = parser.parse_args()
@@ -200,13 +188,9 @@ def main():
         'max_tweets_per_batch': args.max_tweets,
         'batch_size': 32,
         'schedule_interval': args.interval,
-        'results_file': 'classification_results.csv',
-        'log_file': 'automation_log.txt'
+        'results_file': RESULTS_CSV,
+        'log_file': os.path.join(LOG_DIR, 'automation_log.txt')
     }
-    
-    # Create Streamlit dashboard file if needed
-    if args.mode == "dashboard":
-        create_streamlit_dashboard_file()
     
     # Initialize automation system
     automation = DisasterResponseAutomation(config)

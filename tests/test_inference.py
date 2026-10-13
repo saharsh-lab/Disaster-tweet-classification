@@ -1,12 +1,10 @@
 import json
-import os
 import unittest
 
 import numpy as np
 
 from flarewatch.inference import Classifier, MAX_LEN, clean_text, extract_resource_keywords, keyword_hits
-
-ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+from flarewatch.paths import METRICS_JSON
 
 
 class CleanTextTest(unittest.TestCase):
@@ -23,8 +21,8 @@ class CleanTextTest(unittest.TestCase):
 class RequestModelTest(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
-        cls.clf = Classifier([ROOT])
-        with open(os.path.join(ROOT, "model_metrics.json")) as f:
+        cls.clf = Classifier()
+        with open(METRICS_JSON) as f:
             cls.metrics = json.load(f)
 
     def test_matches_training_time_predictions(self):
@@ -54,7 +52,7 @@ class RequestModelTest(unittest.TestCase):
 class ExplanationTest(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
-        cls.clf = Classifier([ROOT])
+        cls.clf = Classifier()
 
     def test_one_weight_per_token(self):
         result = self.clf.classify("Shelter required for family of 4 in Mumbai")
@@ -76,7 +74,7 @@ class ExplanationTest(unittest.TestCase):
 class NeedsModelTest(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
-        cls.clf = Classifier([ROOT])
+        cls.clf = Classifier()
 
     def test_needs_model_is_loaded(self):
         self.assertIsNotNone(self.clf.needs_model)

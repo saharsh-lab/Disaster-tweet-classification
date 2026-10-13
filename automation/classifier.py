@@ -5,11 +5,13 @@ import pandas as pd
 from datetime import datetime
 
 from flarewatch.inference import STOPWORDS, Classifier as SharedClassifier, clean_text as shared_clean_text, extract_resource_keywords
+from flarewatch.paths import MODELS_DIR, RESULTS_CSV
 from tensorflow.keras.models import load_model
 from tensorflow.keras.preprocessing.sequence import pad_sequences
 
 class AutomatedClassifier:
-    def __init__(self, model_path="disaster_rnn_model.h5", tokenizer_path="tokenizer.pkl"):
+    def __init__(self, model_path=os.path.join(MODELS_DIR, "disaster_rnn_model.h5"),
+                 tokenizer_path=os.path.join(MODELS_DIR, "tokenizer.pkl")):
         """Initialize the classifier with pre-trained model and tokenizer"""
         try:
             self.model = load_model(model_path)
@@ -31,7 +33,7 @@ class AutomatedClassifier:
         # Text cleaning and resource detection are shared with the web apps (flarewatch package)
         self.STOPWORDS = STOPWORDS
         try:
-            self.shared = SharedClassifier([os.path.dirname(os.path.abspath(__file__))])
+            self.shared = SharedClassifier()
         except Exception as e:
             print(f"⚠️ Needs model unavailable, using keyword rules: {e}")
             self.shared = None
@@ -185,7 +187,7 @@ class AutomatedClassifier:
         
         return stats
     
-    def save_results(self, results, filename="classification_results.csv"):
+    def save_results(self, results, filename=RESULTS_CSV):
         """Save classification results to CSV"""
         if not results:
             print("❌ No results to save")

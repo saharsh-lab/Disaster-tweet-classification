@@ -5,8 +5,6 @@ from unittest import mock
 from flarewatch import live
 from flarewatch.inference import Classifier
 
-ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-
 
 def status(id_, content, bot=False, language="en", reblog=None):
     return {
@@ -47,7 +45,7 @@ class MastodonTest(unittest.TestCase):
 class LiveFeedTest(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
-        cls.clf = Classifier([ROOT])
+        cls.clf = Classifier()
 
     def setUp(self):
         env = {"FLAREWATCH_LIVE_TAGS": "flood,earthquake", "FLAREWATCH_LIVE_TTL": "300"}

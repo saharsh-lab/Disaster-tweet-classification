@@ -4,8 +4,12 @@ from datetime import datetime, timedelta
 import os
 import glob
 
+from flarewatch.paths import DATA_DIR
+
+RAW_DATA_DIR = os.path.join(DATA_DIR, "raw")
+
 class AutomatedDataCollector:
-    def __init__(self, data_directory="datasets"):
+    def __init__(self, data_directory=RAW_DATA_DIR):
         self.data_directory = data_directory
         self.datasets = []
         self.load_available_datasets()
@@ -114,7 +118,7 @@ class AutomatedDataCollector:
         print(f"Generated {num_tweets} sample tweets for testing")
         return sample_data
     
-    def save_processed_data(self, data, filename="processed_data.csv"):
+    def save_processed_data(self, data, filename=os.path.join(DATA_DIR, "processed_data.csv")):
         """Save processed data for later use"""
         data.to_csv(filename, index=False)
         print(f"Saved processed data to {filename}")

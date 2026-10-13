@@ -76,8 +76,8 @@ def default_gazetteer():
     """Shared instance (loaded once per process); None if the data file is missing."""
     global _default
     if _default is None:
-        path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "data", "gazetteer.json")
-        _default = Gazetteer(path) if os.path.exists(path) else False
+        from flarewatch.paths import GAZETTEER_JSON
+        _default = Gazetteer(GAZETTEER_JSON) if os.path.exists(GAZETTEER_JSON) else False
     return _default or None
 
 

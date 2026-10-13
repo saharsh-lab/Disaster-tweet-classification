@@ -8,22 +8,26 @@ Per-label decision thresholds are tuned on the validation split; metrics are rep
 split next to the original keyword rules.
 
 Usage:
-    venv/bin/python train_needs_model.py            # writes models/needs_v1/
-    venv/bin/python train_needs_model.py --install  # also installs needs_model.npz and updates model_metrics.json
+    python scripts/train_needs_model.py             # writes build/needs_v1/
+    python scripts/train_needs_model.py --install   # also installs models/needs_model.npz and updates models/model_metrics.json
 """
 import argparse
 import json
-import os
 import shutil
+import os
+import sys
 
-import numpy as np
-import pandas as pd
+ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+sys.path.insert(0, ROOT)  # allow `python scripts/<name>.py` from anywhere
 
-from flarewatch.inference import RESOURCE_KEYWORDS, RESOURCE_LABELS, TfidfFeaturizer, clean_text, extract_resource_keywords, keyword_hits
+import numpy as np  # noqa: E402
+import pandas as pd  # noqa: E402
 
-BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-DATA_DIR = os.path.join(BASE_DIR, "training_data", "disaster_response")
-OUT_DIR = os.path.join(BASE_DIR, "models", "needs_v1")
+from flarewatch.inference import RESOURCE_LABELS, TfidfFeaturizer, clean_text, extract_resource_keywords, keyword_hits  # noqa: E402
+from flarewatch.paths import DATA_DIR as APP_DATA_DIR, MODELS_DIR  # noqa: E402
+
+DATA_DIR = os.path.join(APP_DATA_DIR, "external", "disaster_response")
+OUT_DIR = os.path.join(ROOT, "build", "needs_v1")
 SEED = 42
 COLUMNS = [c for c, _ in RESOURCE_LABELS]
 NAMES = [n for _, n in RESOURCE_LABELS]
@@ -186,8 +190,8 @@ def main():
     print(f"written to {OUT_DIR}")
 
     if args.install:
-        shutil.copy2(out_path, os.path.join(BASE_DIR, "needs_model.npz"))
-        metrics_path = os.path.join(BASE_DIR, "model_metrics.json")
+        shutil.copy2(out_path, os.path.join(MODELS_DIR, "needs_model.npz"))
+        metrics_path = os.path.join(MODELS_DIR, "model_metrics.json")
         metrics = json.load(open(metrics_path)) if os.path.exists(metrics_path) else {}
         metrics["needs"] = report
         with open(metrics_path, "w") as f:

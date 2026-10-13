@@ -31,7 +31,7 @@ Try entering disaster scenarios or humanitarian assistance queries directly in t
 ## 🌟 Key Features
 
 ### 🧠 Models (pure NumPy at inference time)
-- **Request classifier — Bidirectional LSTM (v2):** decides whether a message is someone asking for help. Trained on 21k real disaster messages labelled for requests; **88.2% accuracy, 71.3% request F1, 89.7% ROC-AUC** on the held-out test set (the original tornado-trained v1 scored 32.3% / 30.6% on the same test). See [MODEL_CARD.md](MODEL_CARD.md).
+- **Request classifier — Bidirectional LSTM (v2):** decides whether a message is someone asking for help. Trained on 21k real disaster messages labelled for requests; **88.2% accuracy, 71.3% request F1, 89.7% ROC-AUC** on the held-out test set (the original tornado-trained v1 scored 32.3% / 30.6% on the same test). See [docs/MODEL_CARD.md](docs/MODEL_CARD.md).
 - **Needs model — multi-label TF-IDF + logistic regression:** tags water, food, shelter, clothing, medical aid and rescue, several per message. **75.8% micro-F1 on real requests vs. 53.7%** for the original keyword rules.
 - **Word-level explanations:** occlusion — each word is removed in turn and the change in P(request) is reported, so the UI shows which words actually drove a decision.
 - **Serverless-friendly:** the Bi-LSTM and the needs model run as NumPy forward passes (no TensorFlow on the server, verified against Keras to 5 × 10⁻⁷). The Keras `.h5` + `tokenizer.pkl` path is still used by the batch pipeline and as a local fallback.
@@ -70,37 +70,29 @@ Try entering disaster scenarios or humanitarian assistance queries directly in t
 
 ```text
 .
-├── flarewatch/                  # Shared package used by every entry point
-│   ├── inference.py             #   NumPy Bi-LSTM, needs model, occlusion explanations
-│   ├── geo.py                   #   Gazetteer place extraction
-│   ├── live.py                  #   Mastodon / Bluesky live feed with caching
-│   └── data/gazetteer.json      #   Built from GeoNames (CC BY 4.0)
-├── api/                         # Vercel serverless function (index.py) + generated copies of the files below
-├── templates/index.html         # Web application UI
-├── predict_api.py               # Local Flask server & REST API
-├── data_service.py              # Stats, stream and dataset queries
-├── streamlit_dashboard.py       # Streamlit dashboard launcher (automated_dashboard.py renders it)
-├── automated_classifier.py      # Batch classifier (Keras) used by main_automation.py
-├── train_request_model.py       # Trains + evaluates the Bi-LSTM request classifier
-├── train_needs_model.py         # Trains + evaluates the multi-label needs model
-├── rescore_results.py           # Re-scores the stored stream with the deployed models
-├── scripts/
-│   ├── build_gazetteer.py       # Builds flarewatch/data/gazetteer.json
-│   └── sync_vercel_bundle.py    # Copies canonical files into api/ (--check in CI)
-├── tests/                       # unittest suite (models, geo, live feed, API, bundle sync)
-├── model_weights.npz            # Request classifier weights (NumPy)
-├── word_index.json              # Vocabulary
-├── needs_model.npz              # Needs model weights
-├── model_metrics.json           # Evaluation report read by the dashboard
-├── disaster_rnn_model.h5        # Keras version of the request classifier
-├── tokenizer.pkl                # Keras tokenizer
-├── classification_results.csv   # Stored stream (8,000 rows, 1,729 distinct tweets)
-├── dataset_cleaned.csv          # Training corpus shown on the Dataset tab
-├── train_model.ipynb            # Original v1 notebook (kept for reference)
-├── MODEL_CARD.md                # Data, metrics, limitations, how to reproduce
-├── .github/workflows/ci.yml     # Tests on every push / pull request
-└── vercel.json                  # Vercel routing
+├── predict_api.py            # Local Flask server & REST API          → python predict_api.py
+├── streamlit_dashboard.py    # Streamlit dashboard                    → streamlit run streamlit_dashboard.py
+├── main_automation.py        # Batch pipeline controller              → python main_automation.py --mode single
+├── flarewatch/               # Shared package used by every entry point
+│   ├── inference.py          #   NumPy Bi-LSTM, needs model, occlusion explanations
+│   ├── geo.py                #   Gazetteer place extraction (data/gazetteer.json, GeoNames CC BY 4.0)
+│   ├── live.py               #   Mastodon / Bluesky live feed with caching
+│   ├── data_service.py       #   Stats, stream and dataset queries
+│   └── paths.py              #   Single place that knows where models/ and data/ live
+├── automation/               # Batch pipeline: collector, Keras classifier, Streamlit dashboard renderer
+├── models/                   # Deployed models + evaluation report (model_metrics.json)
+├── data/                     # Stored stream, training corpus, raw/ input datasets
+├── templates/                # Web UI (index.html)
+├── api/                      # Vercel function (index.py) + bundle generated by scripts/sync_vercel_bundle.py
+├── scripts/                  # Training, re-scoring, gazetteer build, Vercel bundle sync
+├── tests/                    # unittest suite (models, geo, live feed, API, Vercel bundle)
+├── notebooks/                # Original v1 training notebook (kept for reference)
+├── docs/                     # MODEL_CARD.md, AUTOMATION.md
+├── assets/                   # Logo
+└── .github/workflows/ci.yml  # Tests on every push / pull request
 ```
+
+Generated or downloaded folders — `build/` (training staging), `data/external/` (datasets), `logs/` (automation) — are git-ignored.
 
 ---
 
@@ -165,6 +157,8 @@ streamlit run streamlit_dashboard.py
 | `BLUESKY_HANDLE`, `BLUESKY_APP_PASSWORD` | unset | Enable Bluesky search (free app password from Bluesky settings) |
 
 ### Option C: Automated Ingestion & Batch Runner
+
+See [docs/AUTOMATION.md](docs/AUTOMATION.md) for configuration. Input CSVs go in `data/raw/`; logs and reports are written to `logs/`.
 
 ```bash
 # Execute a single batch classification run
@@ -276,7 +270,7 @@ curl -X POST http://127.0.0.1:5001/api/predict \
 
 ## 🔬 Models, Training & Evaluation
 
-Full details — data, metrics, limitations and reproduction steps — are in **[MODEL_CARD.md](MODEL_CARD.md)**.
+Full details — data, metrics, limitations and reproduction steps — are in **[docs/MODEL_CARD.md](docs/MODEL_CARD.md)**.
 
 | Request classifier (same test set) | Accuracy | Precision | Recall | F1 | ROC-AUC |
 |---|---|---|---|---|---|
@@ -286,10 +280,10 @@ Full details — data, metrics, limitations and reproduction steps — are in **
 
 ```bash
 pip install -r requirements-full.txt
-python train_request_model.py --install   # Bi-LSTM request classifier
-python train_needs_model.py --install     # multi-label needs model
-python rescore_results.py                 # update the stored stream
-python scripts/sync_vercel_bundle.py      # refresh api/ for Vercel
+python scripts/train_request_model.py --install   # Bi-LSTM request classifier
+python scripts/train_needs_model.py --install     # multi-label needs model
+python scripts/rescore_results.py                 # update the stored stream
+python scripts/sync_vercel_bundle.py              # refresh api/ for Vercel
 ```
 
 ## ✅ Tests & CI
@@ -297,7 +291,7 @@ python scripts/sync_vercel_bundle.py      # refresh api/ for Vercel
 ```bash
 python -m unittest discover -s tests -t .
 ```
-33 tests cover preprocessing, NumPy-vs-training parity, explanations, the needs model, place extraction, the live feed (network mocked), every API route including the Vercel rewrite dispatcher, and that `api/` is in sync with the repository root. GitHub Actions runs them on every push and pull request with only the serving dependencies installed.
+34 tests cover preprocessing, NumPy-vs-training parity, explanations, the needs model, place extraction, the live feed (network mocked), every API route including the Vercel rewrite dispatcher, that `api/` is in sync with the repository root, and that the `api/` folder runs on its own (as Vercel deploys it). GitHub Actions runs them on every push and pull request with only the serving dependencies installed.
 
 ---
 
@@ -316,4 +310,4 @@ Contributions, issues, and feature requests are welcome!
 
 Distributed under the MIT License. See `LICENSE` for more information.
 
-Third-party data: Disaster Response Messages (Figure Eight / Appen; see the licence note in [MODEL_CARD.md](MODEL_CARD.md)) and place data from [GeoNames](https://www.geonames.org) (CC BY 4.0).
+Third-party data: Disaster Response Messages (Figure Eight / Appen; see the licence note in [docs/MODEL_CARD.md](docs/MODEL_CARD.md)) and place data from [GeoNames](https://www.geonames.org) (CC BY 4.0).

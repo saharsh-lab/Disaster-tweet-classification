@@ -1,13 +1,13 @@
 """
 Build flarewatch/data/gazetteer.json from GeoNames dumps (CC BY 4.0, https://www.geonames.org).
 
-Inputs (download into training_data/geonames/):
+Inputs (download into data/external/geonames/):
     https://download.geonames.org/export/dump/cities15000.zip   (unzipped to cities15000.txt)
     https://download.geonames.org/export/dump/countryInfo.txt
     https://download.geonames.org/export/dump/admin1CodesASCII.txt
 
 Usage:
-    venv/bin/python scripts/build_gazetteer.py
+    python scripts/build_gazetteer.py
 
 Countries and first-level regions (states, provinces) are placed at the population-weighted
 centre of their cities. Single-word city and region names that are ordinary English words (e.g. "Mobile",
@@ -19,7 +19,7 @@ import unicodedata
 from collections import defaultdict
 
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-SRC = os.path.join(BASE_DIR, "training_data", "geonames")
+SRC = os.path.join(BASE_DIR, "data", "external", "geonames")
 OUT = os.path.join(BASE_DIR, "flarewatch", "data", "gazetteer.json")
 WORDS = "/usr/share/dict/words"
 
@@ -69,7 +69,7 @@ def main():
             for key in (f"C:{cc}", f"A:{cc}.{a1}"):
                 acc = region_acc[key]
                 acc[0] += lat * weight; acc[1] += lon * weight; acc[2] += weight
-            for variant in {name, ascii_name}:
+            for variant in sorted({name, ascii_name}):
                 key = normalize(variant)
                 if " " not in key and key in common:
                     continue  # ordinary English word, too ambiguous
@@ -112,7 +112,7 @@ def main():
         "places": places,
     }
     with open(OUT, "w", encoding="utf-8") as f:
-        json.dump(doc, f, separators=(",", ":"))
+        json.dump(doc, f, separators=(",", ":"), sort_keys=True)  # deterministic output
     kinds = defaultdict(int)
     for cands in places.values():
         kinds[cands[0][4]] += 1

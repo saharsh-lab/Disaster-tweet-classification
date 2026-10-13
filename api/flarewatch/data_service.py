@@ -1,29 +1,14 @@
+"""Stats, stream and dataset queries backing the dashboard and the JSON API."""
 import os
 import json
 import csv
+
+from flarewatch.paths import DATASET_CSV, METRICS_JSON, RESULTS_CSV
 
 try:
     from flarewatch.geo import find_locations
 except ImportError:  # gazetteer not bundled: stats simply omit locations
     find_locations = None
-
-BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-PARENT_DIR = os.path.dirname(BASE_DIR)
-
-def resolve_file(filename):
-    for candidate in [
-        os.path.join(BASE_DIR, filename),
-        os.path.join(PARENT_DIR, filename),
-        os.path.join(BASE_DIR, "datasets", filename),
-        os.path.join(PARENT_DIR, "datasets", filename)
-    ]:
-        if os.path.exists(candidate):
-            return candidate
-    return os.path.join(BASE_DIR, filename)
-
-RESULTS_CSV = resolve_file("classification_results.csv")
-DATASET_CSV = resolve_file("dataset_cleaned.csv")
-METRICS_JSON = resolve_file("model_metrics.json")
 
 _cached_stats = None
 _cached_metrics = None

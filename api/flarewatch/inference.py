@@ -254,7 +254,10 @@ class NeedsModel:
 # Combined classifier used by the apps
 # ---------------------------------------------------------------------------
 class Classifier:
-    def __init__(self, search_dirs):
+    def __init__(self, search_dirs=None):
+        if search_dirs is None:
+            from flarewatch.paths import MODELS_DIR
+            search_dirs = [MODELS_DIR]
         weights = find_file("model_weights.npz", search_dirs)
         word_index = find_file("word_index.json", search_dirs)
         if not weights or not word_index:

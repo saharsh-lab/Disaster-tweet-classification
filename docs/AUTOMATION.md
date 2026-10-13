@@ -14,16 +14,18 @@ This is an automated version of the disaster response tweet classifier that proc
 ## 📁 Project Structure
 
 ```
-disaster-project/
-├── automated_data_collector.py    # Collects and processes datasets
-├── automated_classifier.py        # Classifies tweets in batches
-├── automated_dashboard.py         # Creates visualizations and reports
-├── main_automation.py            # Main automation controller
-├── requirements.txt              # Python dependencies
-├── datasets/                     # Directory for your CSV datasets
-├── disaster_rnn_model.h5         # Pre-trained model
-├── tokenizer.pkl                 # Pre-trained tokenizer
-└── README_AUTOMATION.md          # This file
+.
+├── main_automation.py          # Main automation controller (entry point)
+├── streamlit_dashboard.py      # Streamlit dashboard (entry point)
+├── automation/
+│   ├── collector.py            # Collects and processes datasets
+│   ├── classifier.py           # Classifies tweets in batches (Keras model + shared flarewatch package)
+│   └── dashboard.py            # Creates visualizations and reports
+├── data/raw/                   # Put your CSV datasets here (needs a `text` column)
+├── data/classification_results.csv   # Results written by the pipeline
+├── models/                     # disaster_rnn_model.h5, tokenizer.pkl, needs model
+├── logs/                       # automation_log.txt and HTML reports (git-ignored)
+└── docs/AUTOMATION.md          # This file
 ```
 
 ## 🚀 Quick Start
@@ -31,12 +33,12 @@ disaster-project/
 ### 1. Install Dependencies
 
 ```bash
-pip install -r requirements.txt
+pip install -r requirements-full.txt
 ```
 
 ### 2. Prepare Your Datasets
 
-Create a `datasets` folder and add your CSV files. Each CSV should have a `text` column containing the tweets:
+Add your CSV files to `data/raw/`. Each CSV should have a `text` column containing the tweets:
 
 ```csv
 text,label
@@ -86,7 +88,7 @@ Options:
   --mode {continuous,single,dashboard}  Run mode (default: continuous)
   --interval INT                        Schedule interval in minutes (default: 30)
   --max-tweets INT                      Max tweets per batch (default: 1000)
-  --data-dir PATH                       Dataset directory (default: datasets)
+  --data-dir PATH                       Dataset directory (default: data/raw)
 ```
 
 ### Example Configurations
@@ -105,7 +107,7 @@ python main_automation.py --mode dashboard
 ## 📈 How It Works
 
 ### 1. Data Collection
-- Scans the `datasets` directory for CSV files
+- Scans the `data/raw` directory for CSV files
 - Loads and combines all datasets
 - Removes duplicates and limits batch size
 - Generates sample data if no datasets found
@@ -149,15 +151,15 @@ text,label,timestamp
 The system generates several output files:
 
 - `classification_results.csv`: All classification results
-- `automation_log.txt`: Detailed activity log
-- `automation_report_YYYYMMDD_HHMMSS.html`: Periodic HTML reports
+- `logs/automation_log.txt`: Detailed activity log
+- `logs/automation_report_YYYYMMDD_HHMMSS.html`: Periodic HTML reports
 - `dashboard_report.html`: Dashboard summary report
 
 ## 🔧 Customization
 
 ### Adding New Resource Types
 
-Edit `automated_classifier.py` and modify the `extract_resource` method:
+Edit `automation/classifier.py` and modify the `extract_resource` method:
 
 ```python
 def extract_resource(self, text):
@@ -171,7 +173,7 @@ def extract_resource(self, text):
 
 ### Modifying Processing Logic
 
-Edit `automated_data_collector.py` to customize data collection:
+Edit `automation/collector.py` to customize data collection:
 
 ```python
 def collect_new_data(self, max_tweets=1000):
@@ -181,7 +183,7 @@ def collect_new_data(self, max_tweets=1000):
 
 ### Custom Dashboard
 
-Edit `automated_dashboard.py` to add new visualizations:
+Edit `automation/dashboard.py` to add new visualizations:
 
 ```python
 def create_streamlit_app(self):
@@ -194,7 +196,7 @@ def create_streamlit_app(self):
 ### Common Issues
 
 1. **"No datasets found"**
-   - Create a `datasets` folder
+   - Add CSV files to `data/raw/`
    - Add CSV files with a `text` column
 
 2. **"Model not loaded"**
@@ -210,7 +212,7 @@ def create_streamlit_app(self):
 
 ### Log Files
 
-Check `automation_log.txt` for detailed error messages and system status.
+Check `logs/automation_log.txt` for detailed error messages and system status.
 
 ## 📈 Performance Tips
 
@@ -223,7 +225,7 @@ Check `automation_log.txt` for detailed error messages and system status.
 
 ### API Integration
 ```python
-from automated_classifier import AutomatedClassifier
+from automation.classifier import AutomatedClassifier
 
 classifier = AutomatedClassifier()
 result = classifier.predict_single("Need food urgently!")
@@ -233,7 +235,7 @@ print(result)
 ### Database Integration
 ```python
 import pandas as pd
-from automated_classifier import AutomatedClassifier
+from automation.classifier import AutomatedClassifier
 
 # Load from database
 df = pd.read_sql("SELECT text FROM tweets", connection)

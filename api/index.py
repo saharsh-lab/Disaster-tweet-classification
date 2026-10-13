@@ -4,33 +4,20 @@ import sys
 from flask import Flask, request, jsonify, render_template, send_file
 
 CURRENT_DIR = os.path.dirname(os.path.abspath(__file__))
-PARENT_DIR = os.path.dirname(CURRENT_DIR)
 
-def resolve_file(filename):
-    p1 = os.path.join(CURRENT_DIR, filename)
-    if os.path.exists(p1):
-        return p1
-    p2 = os.path.join(PARENT_DIR, filename)
-    if os.path.exists(p2):
-        return p2
-    return p1
+# The flarewatch package, models, data and templates are bundled next to this file
+# (api/flarewatch, api/models, api/data, api/templates) by scripts/sync_vercel_bundle.py.
+if CURRENT_DIR not in sys.path:
+    sys.path.insert(0, CURRENT_DIR)
 
-templates_dir = os.path.join(CURRENT_DIR, "templates")
-if not os.path.exists(templates_dir):
-    templates_dir = os.path.join(PARENT_DIR, "templates")
+from flarewatch import data_service  # noqa: E402
+from flarewatch.inference import Classifier  # noqa: E402
+from flarewatch.live import LiveFeed  # noqa: E402
+from flarewatch.paths import DATASET_CSV, RESULTS_CSV, TEMPLATES_DIR  # noqa: E402
 
-app = Flask(__name__, template_folder=templates_dir)
+app = Flask(__name__, template_folder=TEMPLATES_DIR)
 
-# Shared pure-NumPy inference (synced into api/ by scripts/sync_vercel_bundle.py)
-try:
-    from flarewatch.inference import Classifier
-    from flarewatch.live import LiveFeed
-except ImportError:
-    sys.path.insert(0, PARENT_DIR)
-    from flarewatch.inference import Classifier
-    from flarewatch.live import LiveFeed
-
-classifier = Classifier([CURRENT_DIR, PARENT_DIR])
+classifier = Classifier()
 live_feed = LiveFeed(classifier)
 
 def process_classification(tweet):
@@ -38,12 +25,6 @@ def process_classification(tweet):
     res['confidence'] = res['confidence_percent']
     res['prob'] = round(res['probability'], 3)
     return res
-
-try:
-    import data_service
-except ImportError:
-    sys.path.insert(0, PARENT_DIR)
-    import data_service
 
 def _get_context_data():
     return {
@@ -135,11 +116,11 @@ def api_health():
 @app.route('/api/index/export/<file_type>', methods=['GET'])
 def export_file(file_type):
     if file_type in ('results.csv', 'classification_results.csv'):
-        filepath = resolve_file('classification_results.csv')
+        filepath = RESULTS_CSV
         if os.path.exists(filepath):
             return send_file(filepath, as_attachment=True, download_name='classification_results.csv', mimetype='text/csv')
     elif file_type in ('dataset.csv', 'dataset_cleaned.csv'):
-        filepath = resolve_file('dataset_cleaned.csv')
+        filepath = DATASET_CSV
         if os.path.exists(filepath):
             return send_file(filepath, as_attachment=True, download_name='dataset_cleaned.csv', mimetype='text/csv')
     elif file_type == 'stats.json':

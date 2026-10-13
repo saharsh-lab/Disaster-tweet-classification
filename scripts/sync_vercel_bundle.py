@@ -1,13 +1,13 @@
 """
 Copy the canonical app files into api/ for the Vercel serverless function.
 
-The repository root is the single source of truth. Vercel runs api/index.py, which resolves
-templates, data and the flarewatch package from api/ first, so those copies are generated here
-rather than edited by hand.
+The repository root is the single source of truth. Vercel runs api/index.py, which imports the
+flarewatch package from api/ and reads api/models, api/data and api/templates (the same layout as
+the repository root, see flarewatch/paths.py). Those copies are generated here, never edited by hand.
 
 Usage:
-    venv/bin/python scripts/sync_vercel_bundle.py          # copy
-    venv/bin/python scripts/sync_vercel_bundle.py --check  # exit 1 if api/ is out of date (used by tests/CI)
+    python scripts/sync_vercel_bundle.py          # copy
+    python scripts/sync_vercel_bundle.py --check  # exit 1 if api/ is out of date (used by tests/CI)
 """
 import argparse
 import filecmp
@@ -18,16 +18,16 @@ import sys
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 API_DIR = os.path.join(BASE_DIR, "api")
 
-FILES = {
-    "templates/index.html": "templates/index.html",
-    "data_service.py": "data_service.py",
-    "model_weights.npz": "model_weights.npz",
-    "word_index.json": "word_index.json",
-    "needs_model.npz": "needs_model.npz",
-    "model_metrics.json": "model_metrics.json",
-    "dataset_cleaned.csv": "dataset_cleaned.csv",
-    "classification_results.csv": "classification_results.csv",
-}
+# Only what the serverless function needs (no Keras .h5 / tokenizer.pkl)
+FILES = {path: path for path in (
+    "templates/index.html",
+    "models/model_weights.npz",
+    "models/word_index.json",
+    "models/needs_model.npz",
+    "models/model_metrics.json",
+    "data/classification_results.csv",
+    "data/dataset_cleaned.csv",
+)}
 PACKAGE = "flarewatch"
 
 
