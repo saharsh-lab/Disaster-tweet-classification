@@ -1,0 +1,488 @@
+{
+  "model_name": "Bidirectional LSTM Request Classifier",
+  "version": "2.0",
+  "trained_at": "2026-10-14 00:48",
+  "task": "Is this message a request for help? (Disaster Response Messages 'request' label)",
+  "threshold": 0.5,
+  "architecture": {
+    "vocab_size": 5000,
+    "embedding_dim": 64,
+    "sequence_length": 30,
+    "recurrent_units": 64,
+    "recurrent_type": "Bidirectional LSTM (128 concatenated)",
+    "dropout": 0.5,
+    "dense_units": 32,
+    "activation_dense": "ReLU",
+    "activation_output": "Sigmoid",
+    "loss_function": "Binary Cross-Entropy (class-weighted)",
+    "optimizer": "Adam (lr=0.001)",
+    "batch_size": 32,
+    "epochs": 4,
+    "best_epoch": 2
+  },
+  "dataset": {
+    "name": "Disaster Response Messages (Figure Eight / Appen)",
+    "source": "huggingface.co/datasets/community-datasets/disaster_response_messages",
+    "train_requests": 3560,
+    "train_non_requests": 17486
+  },
+  "dataset_split": {
+    "total_samples": 26248,
+    "train_samples": 21046,
+    "val_samples": 2573,
+    "test_samples": 2629,
+    "split_ratio": "Official train / validation / test splits"
+  },
+  "metrics": {
+    "accuracy": 88.21,
+    "precision_disaster": 66.2,
+    "recall_disaster": 77.4,
+    "f1_disaster": 71.3,
+    "precision_normal": 94.5,
+    "recall_normal": 90.8,
+    "f1_normal": 92.6,
+    "macro_avg_f1": 82.0,
+    "weighted_avg_f1": 88.5,
+    "roc_auc": 89.7
+  },
+  "confusion_matrix": {
+    "true_negative": 1933,
+    "false_positive": 197,
+    "false_negative": 113,
+    "true_positive": 386,
+    "total": 2629
+  },
+  "training_history": [
+    {
+      "epoch": 1,
+      "loss": 0.465,
+      "accuracy": 82.05,
+      "val_loss": 0.3897,
+      "val_accuracy": 85.85
+    },
+    {
+      "epoch": 2,
+      "loss": 0.3542,
+      "accuracy": 86.72,
+      "val_loss": 0.3617,
+      "val_accuracy": 86.36
+    },
+    {
+      "epoch": 3,
+      "loss": 0.2714,
+      "accuracy": 88.38,
+      "val_loss": 0.3761,
+      "val_accuracy": 85.43
+    },
+    {
+      "epoch": 4,
+      "loss": 0.2043,
+      "accuracy": 90.59,
+      "val_loss": 0.4777,
+      "val_accuracy": 85.46
+    }
+  ],
+  "comparison": {
+    "bilstm_v2": {
+      "accuracy": 88.21,
+      "precision_disaster": 66.2,
+      "recall_disaster": 77.4,
+      "f1_disaster": 71.3,
+      "roc_auc": 89.7
+    },
+    "tfidf_logreg_baseline": {
+      "accuracy": 86.65,
+      "precision_disaster": 62.3,
+      "recall_disaster": 75.2,
+      "f1_disaster": 68.1,
+      "roc_auc": 88.9
+    },
+    "legacy_bilstm_v1": {
+      "accuracy": 32.33,
+      "precision_disaster": 19.0,
+      "recall_disaster": 78.6,
+      "f1_disaster": 30.6,
+      "roc_auc": 46.4
+    }
+  },
+  "probes": [
+    {
+      "text": "Shelter required for family of 4 in Mumbai",
+      "expected": 1,
+      "probability": 0.77
+    },
+    {
+      "text": "We need clean drinking water in our village, please help",
+      "expected": 1,
+      "probability": 0.993
+    },
+    {
+      "text": "My grandmother is trapped under the rubble, send a rescue team",
+      "expected": 1,
+      "probability": 0.62
+    },
+    {
+      "text": "No food for three days, the children are hungry, please send supplies",
+      "expected": 1,
+      "probability": 0.979
+    },
+    {
+      "text": "Need doctors and medicine at the camp near the river",
+      "expected": 1,
+      "probability": 0.772
+    },
+    {
+      "text": "Please send tents and blankets, we lost our home in the flood",
+      "expected": 1,
+      "probability": 0.975
+    },
+    {
+      "text": "Enjoying the sunshine and having an iced latte with friends downtown",
+      "expected": 0,
+      "probability": 0.145
+    },
+    {
+      "text": "The earthquake was magnitude 6.1 according to USGS",
+      "expected": 0,
+      "probability": 0.163
+    },
+    {
+      "text": "Thoughts and prayers to everyone affected by the hurricane",
+      "expected": 0,
+      "probability": 0.169
+    },
+    {
+      "text": "Watching a documentary about tornadoes tonight",
+      "expected": 0,
+      "probability": 0.112
+    },
+    {
+      "text": "Government announces a new relief fund for flood victims",
+      "expected": 0,
+      "probability": 0.211
+    },
+    {
+      "text": "Great match yesterday, what a goal!",
+      "expected": 0,
+      "probability": 0.169
+    }
+  ],
+  "legacy_probes": [
+    {
+      "text": "Shelter required for family of 4 in Mumbai",
+      "expected": 1,
+      "probability": 0.038
+    },
+    {
+      "text": "We need clean drinking water in our village, please help",
+      "expected": 1,
+      "probability": 0.983
+    },
+    {
+      "text": "My grandmother is trapped under the rubble, send a rescue team",
+      "expected": 1,
+      "probability": 0.399
+    },
+    {
+      "text": "No food for three days, the children are hungry, please send supplies",
+      "expected": 1,
+      "probability": 0.077
+    },
+    {
+      "text": "Need doctors and medicine at the camp near the river",
+      "expected": 1,
+      "probability": 0.996
+    },
+    {
+      "text": "Please send tents and blankets, we lost our home in the flood",
+      "expected": 1,
+      "probability": 0.983
+    },
+    {
+      "text": "Enjoying the sunshine and having an iced latte with friends downtown",
+      "expected": 0,
+      "probability": 0.815
+    },
+    {
+      "text": "The earthquake was magnitude 6.1 according to USGS",
+      "expected": 0,
+      "probability": 0.428
+    },
+    {
+      "text": "Thoughts and prayers to everyone affected by the hurricane",
+      "expected": 0,
+      "probability": 0.816
+    },
+    {
+      "text": "Watching a documentary about tornadoes tonight",
+      "expected": 0,
+      "probability": 0.606
+    },
+    {
+      "text": "Government announces a new relief fund for flood victims",
+      "expected": 0,
+      "probability": 0.78
+    },
+    {
+      "text": "Great match yesterday, what a goal!",
+      "expected": 0,
+      "probability": 0.288
+    }
+  ],
+  "numpy_keras_parity_max_abs_diff": 4.76837158203125e-07,
+  "needs": {
+    "model_name": "TF-IDF + logistic regression needs classifier",
+    "version": "1.0",
+    "labels": [
+      "water",
+      "food",
+      "shelter",
+      "clothing",
+      "medical aid",
+      "rescue"
+    ],
+    "features": 8000,
+    "best_epoch": 23,
+    "thresholds": {
+      "water": 0.55,
+      "food": 0.45,
+      "shelter": 0.55,
+      "clothing": 0.3,
+      "medical aid": 0.45,
+      "rescue": 0.6
+    },
+    "keyword_assist": {
+      "water": false,
+      "food": true,
+      "shelter": true,
+      "clothing": false,
+      "medical aid": true,
+      "rescue": true
+    },
+    "test_all_messages": {
+      "model": {
+        "per_label": {
+          "water": {
+            "precision": 86.4,
+            "recall": 61.7,
+            "f1": 72.0,
+            "support": 196
+          },
+          "food": {
+            "precision": 76.6,
+            "recall": 85.3,
+            "f1": 80.7,
+            "support": 326
+          },
+          "shelter": {
+            "precision": 71.2,
+            "recall": 70.9,
+            "f1": 71.0,
+            "support": 230
+          },
+          "clothing": {
+            "precision": 48.1,
+            "recall": 67.6,
+            "f1": 56.2,
+            "support": 37
+          },
+          "medical aid": {
+            "precision": 44.1,
+            "recall": 49.1,
+            "f1": 46.5,
+            "support": 220
+          },
+          "rescue": {
+            "precision": 38.3,
+            "recall": 66.7,
+            "f1": 48.6,
+            "support": 27
+          }
+        },
+        "micro_f1": 67.5,
+        "micro_precision": 66.3,
+        "micro_recall": 68.8,
+        "macro_f1": 62.5
+      },
+      "model_without_keywords": {
+        "per_label": {
+          "water": {
+            "precision": 86.4,
+            "recall": 61.7,
+            "f1": 72.0,
+            "support": 196
+          },
+          "food": {
+            "precision": 79.7,
+            "recall": 72.1,
+            "f1": 75.7,
+            "support": 326
+          },
+          "shelter": {
+            "precision": 71.0,
+            "recall": 64.8,
+            "f1": 67.7,
+            "support": 230
+          },
+          "clothing": {
+            "precision": 48.1,
+            "recall": 67.6,
+            "f1": 56.2,
+            "support": 37
+          },
+          "medical aid": {
+            "precision": 43.6,
+            "recall": 45.0,
+            "f1": 44.3,
+            "support": 220
+          },
+          "rescue": {
+            "precision": 35.3,
+            "recall": 44.4,
+            "f1": 39.3,
+            "support": 27
+          }
+        },
+        "micro_f1": 64.3,
+        "micro_precision": 66.9,
+        "micro_recall": 61.9,
+        "macro_f1": 59.2
+      },
+      "keyword_rules": {
+        "per_label": {
+          "water": {
+            "precision": 55.9,
+            "recall": 55.6,
+            "f1": 55.8,
+            "support": 196
+          },
+          "food": {
+            "precision": 82.2,
+            "recall": 70.9,
+            "f1": 76.1,
+            "support": 326
+          },
+          "shelter": {
+            "precision": 93.3,
+            "recall": 18.3,
+            "f1": 30.5,
+            "support": 230
+          },
+          "clothing": {
+            "precision": 71.4,
+            "recall": 13.5,
+            "f1": 22.7,
+            "support": 37
+          },
+          "medical aid": {
+            "precision": 60.0,
+            "recall": 10.9,
+            "f1": 18.5,
+            "support": 220
+          },
+          "rescue": {
+            "precision": 50.0,
+            "recall": 33.3,
+            "f1": 40.0,
+            "support": 27
+          }
+        },
+        "micro_f1": 51.8,
+        "micro_precision": 71.7,
+        "micro_recall": 40.5,
+        "macro_f1": 40.6
+      }
+    },
+    "test_requests_only": {
+      "model": {
+        "per_label": {
+          "water": {
+            "precision": 88.3,
+            "recall": 70.8,
+            "f1": 78.6,
+            "support": 96
+          },
+          "food": {
+            "precision": 92.9,
+            "recall": 91.8,
+            "f1": 92.4,
+            "support": 171
+          },
+          "shelter": {
+            "precision": 82.9,
+            "recall": 75.4,
+            "f1": 79.0,
+            "support": 122
+          },
+          "clothing": {
+            "precision": 57.1,
+            "recall": 53.3,
+            "f1": 55.2,
+            "support": 15
+          },
+          "medical aid": {
+            "precision": 52.5,
+            "recall": 33.0,
+            "f1": 40.5,
+            "support": 94
+          },
+          "rescue": {
+            "precision": 30.0,
+            "recall": 33.3,
+            "f1": 31.6,
+            "support": 9
+          }
+        },
+        "micro_f1": 75.8,
+        "micro_precision": 81.6,
+        "micro_recall": 70.8,
+        "macro_f1": 62.9
+      },
+      "keyword_rules": {
+        "per_label": {
+          "water": {
+            "precision": 85.4,
+            "recall": 36.5,
+            "f1": 51.1,
+            "support": 96
+          },
+          "food": {
+            "precision": 99.2,
+            "recall": 74.3,
+            "f1": 84.9,
+            "support": 171
+          },
+          "shelter": {
+            "precision": 100.0,
+            "recall": 13.1,
+            "f1": 23.2,
+            "support": 122
+          },
+          "clothing": {
+            "precision": 100.0,
+            "recall": 13.3,
+            "f1": 23.5,
+            "support": 15
+          },
+          "medical aid": {
+            "precision": 72.7,
+            "recall": 8.5,
+            "f1": 15.2,
+            "support": 94
+          },
+          "rescue": {
+            "precision": 100.0,
+            "recall": 22.2,
+            "f1": 36.4,
+            "support": 9
+          }
+        },
+        "micro_f1": 53.7,
+        "micro_precision": 95.0,
+        "micro_recall": 37.5,
+        "macro_f1": 39.0
+      },
+      "messages": 499
+    }
+  }
+}

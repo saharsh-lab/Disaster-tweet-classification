@@ -2,6 +2,11 @@ import os
 import json
 import csv
 
+try:
+    from flarewatch.geo import find_locations
+except ImportError:  # gazetteer not bundled: stats simply omit locations
+    find_locations = None
+
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 PARENT_DIR = os.path.dirname(BASE_DIR)
 
@@ -18,36 +23,47 @@ def resolve_file(filename):
 
 RESULTS_CSV = resolve_file("classification_results.csv")
 DATASET_CSV = resolve_file("dataset_cleaned.csv")
+METRICS_JSON = resolve_file("model_metrics.json")
 
 _cached_stats = None
+_cached_metrics = None
 _cached_results = None
 _cached_dataset = None
 
 # Precomputed baseline statistics for instant zero-IO fallback on serverless cold starts
 DEFAULT_STATS = {
     "total_tweets": 8000,
-    "disaster_tweets": 5755,
-    "normal_tweets": 2245,
-    "avg_confidence": 0.705,
-    "high_confidence_requests": 4886,
-    "low_confidence_requests": 493,
-    "high_confidence_pct": 84.9,
-    "model_accuracy": 0.7399,
+    "disaster_tweets": 855,
+    "normal_tweets": 7145,
+    "avg_confidence": 0.218,
+    "high_confidence_requests": 307,
+    "low_confidence_requests": 356,
+    "high_confidence_pct": 35.9,
+    "model_accuracy": 0.8821,
     "resource_breakdown": {
-        "unspecified resource": 4855,
-        "water": 458,
-        "rescue": 221,
-        "medical aid": 108,
-        "food": 63,
-        "shelter": 50
+        "food": 113,
+        "shelter": 126,
+        "medical aid": 126,
+        "rescue": 57,
+        "clothing": 100,
+        "unspecified resource": 310,
+        "water": 23
     },
     "confidence_distribution": {
-        "0-20%": 1415,
-        "20-40%": 526,
-        "40-60%": 484,
-        "60-80%": 689,
-        "80-100%": 4886
-    }
+        "0-20%": 5184,
+        "20-40%": 1671,
+        "40-60%": 501,
+        "60-80%": 337,
+        "80-100%": 307
+    },
+    "confidence_tiers": {
+        ">90%": 200,
+        "80-90%": 107,
+        "60-80%": 337,
+        "40-60%": 501,
+        "<40%": 6855
+    },
+    "locations": []
 }
 
 def get_results_data():
@@ -107,6 +123,8 @@ def get_dataset_data():
                         "clean_text": r.get("clean_text", ""),
                         "label": lbl,
                         "location": r.get("location", "N/A"),
+                        "genre": r.get("genre", ""),
+                        "split": r.get("split", ""),
                         "resources": r.get("resources", "[]"),
                         "timestamp": str(r.get("timestamp", ""))[:19]
                     })
@@ -162,6 +180,37 @@ def get_stats():
         else:
             buckets["80-100%"] += 1
 
+    # Finer tiers for the dispatch-policy table
+    tiers = {">90%": 0, "80-90%": 0, "60-80%": 0, "40-60%": 0, "<40%": 0}
+    for r in records:
+        c = r["confidence_raw"]
+        if c > 0.9:
+            tiers[">90%"] += 1
+        elif c > 0.8:
+            tiers["80-90%"] += 1
+        elif c >= 0.6:
+            tiers["60-80%"] += 1
+        elif c >= 0.4:
+            tiers["40-60%"] += 1
+        else:
+            tiers["<40%"] += 1
+
+    # Where requests come from (place names found in the text)
+    places = {}
+    if find_locations:
+        seen = {}
+        for r in records:
+            if not r["is_request"]:
+                continue
+            text = r["tweet"]
+            if text not in seen:
+                seen[text] = find_locations(text)
+            for loc in seen[text]:
+                key = (loc["name"], loc["country_code"])
+                entry = places.setdefault(key, dict(loc, count=0))
+                entry["count"] += 1
+    locations = sorted(places.values(), key=lambda x: -x["count"])[:15]
+
     _cached_stats = {
         "total_tweets": total,
         "disaster_tweets": disaster_count,
@@ -170,9 +219,11 @@ def get_stats():
         "high_confidence_requests": high_conf,
         "low_confidence_requests": low_conf,
         "high_confidence_pct": high_conf_pct,
-        "model_accuracy": 0.7399,
+        "model_accuracy": model_accuracy(),
         "resource_breakdown": resource_counts,
-        "confidence_distribution": buckets
+        "confidence_distribution": buckets,
+        "confidence_tiers": tiers,
+        "locations": locations
     }
     return _cached_stats
 
@@ -251,7 +302,30 @@ def query_dataset(page=1, page_size=25, search="", label="all"):
         "records": page_records
     }
 
+def _load_metrics():
+    global _cached_metrics
+    if _cached_metrics is None:
+        _cached_metrics = {}
+        if os.path.exists(METRICS_JSON):
+            try:
+                with open(METRICS_JSON, "r", encoding="utf-8") as f:
+                    _cached_metrics = json.load(f)
+            except Exception as e:
+                print(f"Warning: could not read {METRICS_JSON}: {e}")
+    return _cached_metrics
+
+
+def model_accuracy():
+    """Held-out accuracy (0-1) of the deployed model."""
+    metrics = _load_metrics().get("metrics")
+    return round(metrics["accuracy"] / 100, 4) if metrics else 0.7399
+
+
 def get_model_performance():
+    """Evaluation report written by train_request_model.py; legacy v1 figures if it is missing."""
+    metrics = _load_metrics()
+    if metrics:
+        return metrics
     return {
         "model_name": "Bidirectional LSTM Disaster Tweet Classifier",
         "architecture": {
