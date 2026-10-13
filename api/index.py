@@ -1,5 +1,6 @@
 import os
 import sys
+from urllib.parse import parse_qs, urlencode
 
 from flask import Flask, request, jsonify, render_template, send_file
 
@@ -219,15 +220,28 @@ def index():
                            **ctx)
 
 class VercelMiddleware:
+    """
+    Restore the original request path on Vercel.
+
+    vercel.json rewrites every URL to this function as /api/index?__path__=/<original path>,
+    because the original path is not otherwise visible to the WSGI app. Putting it back into
+    PATH_INFO lets Flask's normal routes (/api/stats, /api/live, /export/...) match.
+    """
     def __init__(self, wsgi_app):
         self.wsgi_app = wsgi_app
 
     def __call__(self, environ, start_response):
-        matched = environ.get('HTTP_X_MATCHED_PATH') or environ.get('HTTP_X_FORWARDED_URI')
-        if matched:
-            path = matched.split('?')[0]
-            if path and not path.endswith('/api/index') and not path.endswith('/api/index.py'):
-                environ['PATH_INFO'] = path
+        params = parse_qs(environ.get('QUERY_STRING', ''), keep_blank_values=True)
+        original = params.pop('__path__', [None])[0]
+        if original is not None:
+            environ['PATH_INFO'] = '/' + original.lstrip('/')
+            environ['QUERY_STRING'] = urlencode(params, doseq=True)
+        else:
+            matched = environ.get('HTTP_X_MATCHED_PATH') or environ.get('HTTP_X_FORWARDED_URI')
+            if matched:
+                path = matched.split('?')[0]
+                if path and not path.endswith('/api/index') and not path.endswith('/api/index.py'):
+                    environ['PATH_INFO'] = path
         return self.wsgi_app(environ, start_response)
 
 app.wsgi_app = VercelMiddleware(app.wsgi_app)
